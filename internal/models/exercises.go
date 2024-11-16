@@ -1,10 +1,14 @@
 package models
 
+import (
+	"github.com/lib/pq"
+)
+
 type Exercise struct {
-	Id               int32    `json:"id"`
-	Name             string   `json:"name"`              // Name of the exercise
-	Description      string   `json:"description"`       // Optional description of the exercise
-	PrimaryMuscle    string   `json:"primary_muscle"`    // Primary muscle targeted
-	SecondaryMuscles []string `json:"secondary_muscles"` // List of secondary muscles targeted
-	Equipment        string   `json:"equipment"`
+	ID              uint           `gorm:"primaryKey" json:"id"`
+	Name            string         `gorm:"unique;not null" json:"name"`
+	PrimaryMuscle   string         `gorm:"not null" json:"primary_muscle"`
+	SecondaryMuscle pq.StringArray `gorm:"type:text[]" json:"secondary_muscle"` // PostgreSQL array type
+	Equipment       string         `gorm:"not null" json:"equipment"`
+	Description     string         `json:"description"`
 }

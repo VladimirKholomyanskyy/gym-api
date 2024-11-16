@@ -9,6 +9,7 @@ import (
 
 	"github.com/VladimirKholomyanskyy/gym-api/internal/handlers"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/repository"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/seed"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/service"
 	"github.com/joho/godotenv"
 
@@ -18,8 +19,9 @@ import (
 )
 
 type Server struct {
-	port        int
-	UserHandler *handlers.UserHandler
+	port            int
+	UserHandler     *handlers.UserHandler
+	ExerciseHandler *handlers.ExerciseHandler
 }
 
 func NewServer() *http.Server {
@@ -43,12 +45,19 @@ func NewServer() *http.Server {
 		panic("failed to connect database")
 	}
 
-	repo := &repository.UserRepository{DB: db}
-	svc := &service.UserService{Repo: repo}
-	handler := &handlers.UserHandler{Service: svc}
+	user_repo := &repository.UserRepository{DB: db}
+	user_svc := &service.UserService{Repo: user_repo}
+	user_handler := &handlers.UserHandler{Service: user_svc}
+
+	exercise_repo := &repository.ExerciseRepository{DB: db}
+	exercise_svc := &service.ExerciseService{Repo: exercise_repo}
+	exercise_handler := &handlers.ExerciseHandler{Service: exercise_svc}
+
+	seed.SeedExercises(exercise_repo)
 	NewServer := &Server{
-		port:        port,
-		UserHandler: handler,
+		port:            port,
+		UserHandler:     user_handler,
+		ExerciseHandler: exercise_handler,
 	}
 
 	// Declare Server config
