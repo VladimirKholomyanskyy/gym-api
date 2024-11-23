@@ -9,7 +9,6 @@ type WorkoutRepository struct {
 	db *gorm.DB
 }
 
-// NewWorkoutRepository creates a new instance of WorkoutRepository
 func NewWorkoutRepository(db *gorm.DB) *WorkoutRepository {
 	return &WorkoutRepository{db: db}
 }
@@ -20,13 +19,13 @@ func (r *WorkoutRepository) Create(workout *models.Workout) error {
 }
 
 // Get retrieves a Workout by ID
-func (r *WorkoutRepository) Get(id uint) (*models.Workout, error) {
+func (r *WorkoutRepository) FindByID(id uint) (*models.Workout, error) {
 	var workout models.Workout
 	err := r.db.Preload("Exercises").First(&workout, id).Error
 	return &workout, err
 }
 
-func (r *WorkoutRepository) GetWorkoutsByTrainingProgramID(trainingProgramID uint) ([]models.Workout, error) {
+func (r *WorkoutRepository) FindByTrainingProgramID(trainingProgramID uint) ([]models.Workout, error) {
 	var workouts []models.Workout
 	err := r.db.Where("training_program_id = ?", trainingProgramID).
 		Preload("Exercises").

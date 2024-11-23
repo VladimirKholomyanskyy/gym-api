@@ -6,13 +6,17 @@ import (
 )
 
 type ExerciseService struct {
-	Repo *repository.ExerciseRepository
+	repo *repository.ExerciseRepository
+}
+
+func NewExerciseService(repo *repository.ExerciseRepository) *ExerciseService {
+	return &ExerciseService{repo: repo}
 }
 
 func (s *ExerciseService) GetExercisesByPrimaryMuscle(primaryMuscle string) ([]models.Exercise, error) {
-	return s.Repo.GetExercisesByPrimaryMuscle(primaryMuscle)
+	return s.repo.FindByPrimaryMuscle(primaryMuscle)
 }
 
 func (s *ExerciseService) GetAllExercises() ([]models.Exercise, error) {
-	return s.Repo.GetAllExercises()
+	return s.repo.FindAll()
 }

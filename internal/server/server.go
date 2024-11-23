@@ -23,9 +23,10 @@ import (
 type Server struct {
 	port int
 	// KeycloakMiddleware *auth.KeycloakMiddleware
-	UserHandler     *handlers.UserHandler
-	ExerciseHandler *handlers.ExerciseHandler
-	TrainingProgram *handlers.TrainingProgramHandler
+	UserHandler            *handlers.UserHandler
+	ExerciseHandler        *handlers.ExerciseHandler
+	TrainingProgram        *handlers.TrainingProgramHandler
+	WorkoutExerciseHandler *handlers.WorkoutExerciseHandler
 }
 
 func NewServer() *http.Server {
@@ -49,22 +50,26 @@ func NewServer() *http.Server {
 		panic("failed to connect database")
 	}
 
-	user_repo := &repository.UserRepository{DB: db}
-	user_svc := &service.UserService{Repo: user_repo}
-	user_handler := &handlers.UserHandler{Service: user_svc}
-
-	exercise_repo := &repository.ExerciseRepository{DB: db}
-	exercise_svc := &service.ExerciseService{Repo: exercise_repo}
-	exercise_handler := &handlers.ExerciseHandler{Service: exercise_svc}
-
-	seed.SeedExercises(exercise_repo)
-
+	// Initializing data layer
+	userRepo := repository.NewUserRepository(db)
+	exerciseRepo := repository.NewExerciseRepository(db)
 	trainingProgramRepo := repository.NewTrainingProgramRepository(db)
 	workoutRepo := repository.NewWorkoutRepository(db)
 	workoutExerciseRepo := repository.NewWorkoutExerciseRepository(db)
+
+	// Initializing service layer
+	userService := service.NewUserService(userRepo)
+	exerciseService := service.NewExerciseService(exerciseRepo)
 	trainingProgramService := service.NewTrainingProgramService(trainingProgramRepo, workoutRepo, workoutExerciseRepo)
 
+	// Initializing application layer
+	userHandler := &handlers.UserHandler{Service: userService}
+	exerciseHandler := &handlers.ExerciseHandler{Service: exerciseService}
 	trainingProgramHandler := handlers.NewTrainingProgramHandler(trainingProgramService)
+	workoutExerciseHandler := handlers.NewWorkoutExerciseHandler(trainingProgramService)
+
+	seed.SeedExercises(exerciseRepo)
+
 	// client_id := os.Getenv("CLIENT_ID")
 	// issuer := os.Getenv("ISSUER")
 
@@ -75,10 +80,11 @@ func NewServer() *http.Server {
 	// }
 
 	NewServer := &Server{
-		port:            port,
-		UserHandler:     user_handler,
-		ExerciseHandler: exercise_handler,
-		TrainingProgram: trainingProgramHandler,
+		port:                   port,
+		UserHandler:            userHandler,
+		ExerciseHandler:        exerciseHandler,
+		TrainingProgram:        trainingProgramHandler,
+		WorkoutExerciseHandler: workoutExerciseHandler,
 		// KeycloakMiddleware: KeycloakMiddleware,
 	}
 

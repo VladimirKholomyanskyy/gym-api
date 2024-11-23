@@ -6,18 +6,25 @@ import (
 )
 
 type ExerciseRepository struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
-func (r *ExerciseRepository) GetAllExercises() ([]models.Exercise, error) {
+func NewExerciseRepository(db *gorm.DB) *ExerciseRepository {
+	return &ExerciseRepository{db: db}
+}
+
+func (r *ExerciseRepository) Create(exercise *models.Exercise) error {
+	return r.db.Create(exercise).Error
+}
+func (r *ExerciseRepository) FindAll() ([]models.Exercise, error) {
 	var exercises []models.Exercise
-	err := r.DB.Find(&exercises).Error
+	err := r.db.Find(&exercises).Error
 	return exercises, err
 }
 
-func (r *ExerciseRepository) GetExercisesByPrimaryMuscle(primaryMuscle string) ([]models.Exercise, error) {
+func (r *ExerciseRepository) FindByPrimaryMuscle(primaryMuscle string) ([]models.Exercise, error) {
 	var exercises []models.Exercise
-	if err := r.DB.Where("primary_muscle = ?", primaryMuscle).Find(&exercises).Error; err != nil {
+	if err := r.db.Where("primary_muscle = ?", primaryMuscle).Find(&exercises).Error; err != nil {
 		return nil, err
 	}
 	return exercises, nil

@@ -13,6 +13,7 @@ require (
 require (
 	github.com/coreos/go-oidc v2.2.1+incompatible // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/pquerna/cachecontrol v0.2.0 // indirect

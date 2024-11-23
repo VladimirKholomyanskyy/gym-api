@@ -18,20 +18,16 @@ func NewTrainingProgramHandler(service *service.TrainingProgramService) *Trainin
 	return &TrainingProgramHandler{service: service}
 }
 func (h *TrainingProgramHandler) HandleCreateProgram(w http.ResponseWriter, r *http.Request) {
-	var request models.TrainingProgramCreateRequest
+	var request models.CreateTrainingProgramRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	user_id, _ := strconv.Atoi(r.Context().Value(models.UserIDKey).(string))
-	program := models.TrainingProgramInput{
-		Name:        request.Name,
-		Description: request.Description,
-		UserID:      uint(user_id),
-	}
-	responce, err := h.service.CreateTrainingProgram(program)
+	userID, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
+
+	response, err := h.service.CreateTrainingProgram(request, uint(userID))
 	if err != nil {
 		http.Error(w, "Failed to create training program", http.StatusInternalServerError)
 		return
@@ -39,31 +35,31 @@ func (h *TrainingProgramHandler) HandleCreateProgram(w http.ResponseWriter, r *h
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(responce)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *TrainingProgramHandler) HandleGetAllUserPrograms(w http.ResponseWriter, r *http.Request) {
-	user_id, _ := strconv.Atoi(r.Context().Value(models.UserIDKey).(string))
-	user_programs, err := h.service.GetAllTrainingPrograms(uint(user_id))
+	userID, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
+	userPrograms, err := h.service.GetAllTrainingPrograms(uint(userID))
 	if err != nil {
 		http.Error(w, "Failed to fetch training programs", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user_programs)
+	json.NewEncoder(w).Encode(userPrograms)
 }
 
 func (h *TrainingProgramHandler) HandleDeleteProgram(w http.ResponseWriter, r *http.Request) {
-	user_id, _ := strconv.Atoi(r.Context().Value(models.UserIDKey).(string))
+	userID, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
 	params := mux.Vars(r)
 
-	program_id, err := strconv.Atoi(params["id"])
+	programID, err := strconv.Atoi(params["id"])
 	if err != nil {
 		http.Error(w, "Invalid id", http.StatusBadRequest)
 		return
 	}
-	err = h.service.DeleteTrainingProgram(uint(user_id), uint(program_id))
+	err = h.service.DeleteTrainingProgram(uint(userID), uint(programID))
 	if err != nil {
 		http.Error(w, "Failed to delete training program", http.StatusInternalServerError)
 	}
@@ -72,20 +68,16 @@ func (h *TrainingProgramHandler) HandleDeleteProgram(w http.ResponseWriter, r *h
 }
 
 func (h *TrainingProgramHandler) HandleUpdateProgram(w http.ResponseWriter, r *http.Request) {
-	var request models.TrainingProgramCreateRequest
+	var request models.CreateTrainingProgramRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	user_id, _ := strconv.Atoi(r.Context().Value(models.UserIDKey).(string))
-	program := models.TrainingProgramInput{
-		Name:        request.Name,
-		Description: request.Description,
-		UserID:      uint(user_id),
-	}
-	responce, err := h.service.UpdateTrainingProgram(program)
+	userID, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
+
+	responce, err := h.service.UpdateTrainingProgram(request, uint(userID))
 	if err != nil {
 		http.Error(w, "Failed to update training program", http.StatusInternalServerError)
 		return
@@ -97,9 +89,9 @@ func (h *TrainingProgramHandler) HandleUpdateProgram(w http.ResponseWriter, r *h
 }
 
 func (h *TrainingProgramHandler) HandleAddWorkoutToProgram(w http.ResponseWriter, r *http.Request) {
-	user_id, _ := strconv.Atoi(r.Context().Value(models.UserIDKey).(string))
+	userID, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
 	params := mux.Vars(r)
-	program_id, err := strconv.Atoi(params["program_id"])
+	programID, err := strconv.Atoi(params["program_id"])
 	if err != nil {
 		http.Error(w, "Invalid id", http.StatusBadRequest)
 	}
@@ -108,9 +100,9 @@ func (h *TrainingProgramHandler) HandleAddWorkoutToProgram(w http.ResponseWriter
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	workoutInput := models.WorkoutInput{Name: request.Name, TrainingProgramID: uint(program_id), UserID: uint(user_id)}
+
 	var response *models.Workout
-	response, err = h.service.AddWorkoutToProgram(workoutInput)
+	response, err = h.service.AddWorkoutToProgram(request, uint(userID), uint(programID))
 	if err != nil {
 		http.Error(w, "Failed to add workout", http.StatusInternalServerError)
 		return

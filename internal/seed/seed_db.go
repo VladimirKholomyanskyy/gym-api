@@ -10,7 +10,7 @@ import (
 func SeedExercises(repo *repository.ExerciseRepository) {
 	var exercises []models.Exercise
 	var err error
-	exercises, err = repo.GetAllExercises()
+	exercises, err = repo.FindAll()
 	if err != nil {
 		log.Fatalf("Failed to count exercises: %v", err)
 	}
@@ -25,8 +25,10 @@ func SeedExercises(repo *repository.ExerciseRepository) {
 		}
 
 		// Insert exercises
-		if err := repo.DB.Create(&exercises).Error; err != nil {
-			log.Fatalf("Failed to seed exercises: %v", err)
+		for _, exercise := range exercises {
+			if err := repo.Create(&exercise); err != nil {
+				log.Fatalf("Failed to seed exercises: %v", err)
+			}
 		}
 
 		log.Println("Seeded exercises table with initial data.")
