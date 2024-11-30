@@ -14,34 +14,10 @@ type UserHandler struct {
 	Service *service.UserService
 }
 
-func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var request models.CreateUserRequest
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(UserIDKey).(uint)
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	user, err := h.Service.CreateUser(request)
-	if err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
-}
-
-func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		http.Error(w, "Invalid id", http.StatusBadRequest)
-		return
-	}
-
-	user, err := h.Service.FindUserByID(uint(id))
+	user, err := h.Service.FindUserByID(userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return

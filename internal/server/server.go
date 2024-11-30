@@ -2,13 +2,13 @@ package server
 
 import (
 	"fmt"
-	// "log"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	// "github.com/VladimirKholomyanskyy/gym-api/internal/auth"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/auth"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/handlers"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/repository"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/seed"
@@ -21,8 +21,8 @@ import (
 )
 
 type Server struct {
-	port int
-	// KeycloakMiddleware *auth.KeycloakMiddleware
+	port                   int
+	KeycloakMiddleware     *auth.KeycloakMiddleware
 	UserHandler            *handlers.UserHandler
 	ExerciseHandler        *handlers.ExerciseHandler
 	TrainingProgram        *handlers.TrainingProgramHandler
@@ -70,14 +70,13 @@ func NewServer() *http.Server {
 
 	seed.SeedExercises(exerciseRepo)
 
-	// client_id := os.Getenv("CLIENT_ID")
-	// issuer := os.Getenv("ISSUER")
+	client_id := os.Getenv("CLIENT_ID")
+	issuer := os.Getenv("ISSUER")
 
-	// var KeycloakMiddleware *auth.KeycloakMiddleware
-	// KeycloakMiddleware, err = auth.NewKeycloakMiddleware(issuer, client_id)
-	// if err != nil {
-	// 	log.Fatal("Failed to init keycloak")
-	// }
+	KeycloakMiddleware, err := auth.NewKeycloakMiddleware(userService, issuer, client_id)
+	if err != nil {
+		log.Fatal("Failed to init keycloak")
+	}
 
 	NewServer := &Server{
 		port:                   port,
@@ -85,7 +84,7 @@ func NewServer() *http.Server {
 		ExerciseHandler:        exerciseHandler,
 		TrainingProgram:        trainingProgramHandler,
 		WorkoutExerciseHandler: workoutExerciseHandler,
-		// KeycloakMiddleware: KeycloakMiddleware,
+		KeycloakMiddleware:     KeycloakMiddleware,
 	}
 
 	// Declare Server config

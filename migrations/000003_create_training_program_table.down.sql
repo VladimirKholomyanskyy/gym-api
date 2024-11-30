@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS training_program;
+DROP TABLE IF EXISTS training_programs;

@@ -4,5 +4,8 @@ CREATE TABLE workout_exercises (
     exercise_id INT NOT NULL REFERENCES exercises(id),
     sets INT NOT NULL CHECK (sets > 0),
     reps INT NOT NULL CHECK (reps > 0),
-    weight DECIMAL(5, 2) NOT NULL CHECK (weight >= 0)
+    weight DECIMAL(5, 2) NOT NULL CHECK (weight >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );

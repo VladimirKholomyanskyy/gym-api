@@ -12,13 +12,9 @@ type UserService struct {
 func NewUserService(repo *repository.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
-func (s *UserService) CreateUser(request models.CreateUserRequest) (*models.User, error) {
+func (s *UserService) CreateUser(externalUserID string) (*models.User, error) {
 	user := &models.User{
-		Username: request.Username,
-		Email:    request.Email,
-		Age:      request.Age,
-		Weight:   request.Weight,
-		Height:   request.Height,
+		ExternalID: externalUserID,
 	}
 	err := s.repo.CreateUser(user)
 	if err != nil {
@@ -29,6 +25,10 @@ func (s *UserService) CreateUser(request models.CreateUserRequest) (*models.User
 
 func (s *UserService) FindUserByID(id uint) (*models.User, error) {
 	return s.repo.FindByID(id)
+}
+
+func (s *UserService) FindUserByExternalID(id string) (*models.User, error) {
+	return s.repo.FindByExternalID(id)
 }
 
 func (s *UserService) UpdateUser(user *models.User) error {

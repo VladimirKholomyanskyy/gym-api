@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/VladimirKholomyanskyy/gym-api/internal/models"
@@ -13,6 +14,7 @@ type ExerciseHandler struct {
 }
 
 func (h *ExerciseHandler) GetAllExercises(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request exercises")
 	primaryMuscle := r.URL.Query().Get("primary_muscle")
 	var exercises []models.Exercise
 	var err error

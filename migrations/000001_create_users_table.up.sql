@@ -1,10 +1,10 @@
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    age INT NOT NULL CHECK (age >= 0),
-    weight DECIMAL(5, 2) NOT NULL CHECK (weight > 0),
-    height DECIMAL(5, 2) NOT NULL CHECK (height > 0),
+    external_id VARCHAR(255) NOT NULL UNIQUE,
+    age INT,
+    weight DECIMAL(5, 2),
+    height DECIMAL(5, 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );

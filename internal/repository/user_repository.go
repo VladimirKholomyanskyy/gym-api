@@ -22,7 +22,11 @@ func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 	err := r.db.First(&user, id).Error
 	return &user, err
 }
-
+func (r *UserRepository) FindByExternalID(id string) (*models.User, error) {
+	var user models.User
+	err := r.db.Where("external_id=?", id).First(&user).Error
+	return &user, err
+}
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	return r.db.Save(user).Error
 }
