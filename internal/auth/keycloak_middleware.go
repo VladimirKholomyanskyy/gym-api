@@ -32,6 +32,7 @@ func (km *KeycloakMiddleware) Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract token from Authorization header
 		authHeader := r.Header.Get("Authorization")
+
 		if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 			http.Error(w, "Missing or invalid Authorization header", http.StatusUnauthorized)
 			return

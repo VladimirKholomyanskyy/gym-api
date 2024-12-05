@@ -15,7 +15,7 @@ import {
   SelectContent,
   SelectItem,
 } from "./ui/select";
-import { Button } from './ui/button';
+import { Button } from "./ui/button";
 import { listExercises } from "../api/exercises";
 import { createTrainingProgram } from "../api/trainingPrograms";
 import { createWorkout } from "../api/workouts";
@@ -26,6 +26,7 @@ import {
   AddExerciseRequest,
   Exercise,
 } from "../types/api";
+import { useAuth } from "react-oidc-context";
 
 const TrainingProgramFlow: React.FC = () => {
   const [programName, setProgramName] = useState("");
@@ -39,11 +40,14 @@ const TrainingProgramFlow: React.FC = () => {
   const [workoutId, setWorkoutId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const user = useAuth().user;
+  if (!user) {
+    throw new Error("User is not authenticated");
+  }
 
   useEffect(() => {
     const fetchAllExercises = async () => {
-      const data = await listExercises();
-      console.log(data)
+      const data = await listExercises(user);
       setExercises(data);
     };
     fetchAllExercises();
@@ -58,7 +62,7 @@ const TrainingProgramFlow: React.FC = () => {
         name: programName,
         description: programDescription,
       };
-      const program = await createTrainingProgram(request);
+      const program = await createTrainingProgram(user, request);
       setProgramId(program.ID);
       setMessage("Training program created successfully!");
     } catch (error: any) {
@@ -79,8 +83,8 @@ const TrainingProgramFlow: React.FC = () => {
 
     try {
       const request: CreateWorkoutRequest = { name: workoutName };
-      const workout = await createWorkout(programId, request);
-      setWorkoutId(workout.id);
+      const workout = await createWorkout(user, programId, request);
+      setWorkoutId(workout.ID);
       setMessage("Workout created successfully!");
     } catch (error: any) {
       setMessage(error.response?.data?.message || "Failed to create workout.");
@@ -100,12 +104,12 @@ const TrainingProgramFlow: React.FC = () => {
 
     try {
       const request: AddExerciseRequest = {
-        exerciseId: selectedExerciseId,
-        workoutId,
-        sets,
-        reps,
+        exercise_id: selectedExerciseId,
+        workout_id: workoutId,
+        sets: sets,
+        reps: reps,
       };
-      await addExerciseToWorkout(request);
+      await addExerciseToWorkout(user, request);
       setMessage("Exercise added successfully!");
     } catch (error: any) {
       setMessage(error.response?.data?.message || "Failed to add exercise.");
@@ -113,10 +117,10 @@ const TrainingProgramFlow: React.FC = () => {
       setLoading(false);
     }
   };
-  console.log(exercises)
+
   return (
     <Box p={5}>
-      <VStack gap={4}>
+      <VStack gap={4} minHeight="100%">
         <Text fontSize="lg" fontWeight="bold">
           Training Program Flow
         </Text>
@@ -156,20 +160,21 @@ const TrainingProgramFlow: React.FC = () => {
 
         <Separator />
 
-        <SelectRoot collection={createListCollection({items: exercises})}>
+        <SelectRoot collection={createListCollection({ items: exercises })}>
           <SelectTrigger clearable>
             <SelectValueText placeholder="Select Exercise" />
           </SelectTrigger>
           <SelectContent>
-            {Array.isArray(exercises) && exercises.map((exercise) => (
-              <SelectItem
-                key={exercise.ID}
-                item={{ value: exercise.ID }}
-                onClick={() => setSelectedExerciseId(exercise.ID)}
-              >
-                {exercise.Name}
-              </SelectItem>
-            ))}
+            {Array.isArray(exercises) &&
+              exercises.map((exercise) => (
+                <SelectItem
+                  key={exercise.ID}
+                  item={{ value: exercise.ID }}
+                  onClick={() => setSelectedExerciseId(exercise.ID)}
+                >
+                  {exercise.Name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </SelectRoot>
 

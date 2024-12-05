@@ -21,12 +21,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Handle("/users/me", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.UserHandler.UpdateUser))).Methods("PUT")
 	r.HandleFunc("/users/me", s.UserHandler.DeleteUser).Methods("DELETE")
 
-	r.HandleFunc("/exercises", s.ExerciseHandler.GetAllExercises).Methods("GET")
+	r.Handle("/exercises", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.ExerciseHandler.GetAllExercises))).Methods("GET")
 	// r.Handle("/exercises", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.ExerciseHandler.GetAllExercises))).Methods("GET")
 
 	r.Handle("/training-programs", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleCreateProgram))).Methods("POST")
 	r.Handle("/training-programs/{id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleDeleteProgram))).Methods("DELETE")
-	r.Handle("/training-programs/{id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleGetAllUserPrograms))).Methods("GET")
+	r.Handle("/training-programs", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleGetAllUserPrograms))).Methods("GET")
 	r.Handle("/training-programs/{program_id:[0-9]+}/workouts", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleAddWorkoutToProgram))).Methods("POST")
 	r.Handle("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleRemoveWorkoutFromProgram))).Methods("DELETE")
 	r.Handle("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleUpdateWorkoutOfProgram))).Methods("PUT")

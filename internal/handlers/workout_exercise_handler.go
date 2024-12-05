@@ -24,9 +24,9 @@ func (h *WorkoutExerciseHandler) HandleCreateWorkoutExercise(w http.ResponseWrit
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	userID, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
+	userID := r.Context().Value(UserIDKey).(uint)
 
-	response, err := h.service.AddExerciseToWorkout(request, uint(userID))
+	response, err := h.service.AddExerciseToWorkout(request, userID)
 	if err != nil {
 		http.Error(w, "Failed to create workout exercise", http.StatusInternalServerError)
 		return
@@ -47,7 +47,7 @@ func (h *WorkoutExerciseHandler) HandleListWorkoutExercises(w http.ResponseWrite
 		http.Error(w, "Invalid parent format", http.StatusBadRequest)
 	}
 
-	user_id, _ := strconv.Atoi(r.Context().Value(UserIDKey).(string))
+	userID := r.Context().Value(UserIDKey).(uint)
 
 	parentType, parentID := parts[0], parts[1]
 	workoutID, err := strconv.Atoi(parentID)
@@ -58,7 +58,7 @@ func (h *WorkoutExerciseHandler) HandleListWorkoutExercises(w http.ResponseWrite
 	if parentType != "workout" {
 		http.Error(w, "Not valid parent type", http.StatusBadRequest)
 	}
-	workoutExercises, err := h.service.GetAllWorkoutExercisesByWorkout(uint(user_id), uint(workoutID))
+	workoutExercises, err := h.service.GetAllWorkoutExercisesByWorkout(userID, uint(workoutID))
 	if err != nil {
 		http.Error(w, "Failed to fetch workout exercise", http.StatusInternalServerError)
 		return

@@ -1,6 +1,8 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type TrainingProgram struct {
 	gorm.Model
@@ -12,4 +14,10 @@ type TrainingProgram struct {
 type CreateTrainingProgramRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+type CreateTrainingProgramResponse struct {
+	ID uint `json:"id"`
+	Name string `json:"name"`
+	Description string `json:"description,omitempty"`
 }

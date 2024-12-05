@@ -1,28 +1,32 @@
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { Box, VStack, Input, Text } from '@chakra-ui/react';
-import { Button } from './ui/button';
-import { addExerciseToWorkout } from '../api/workout-exercises';
-import { AddExerciseRequest } from '../types/api';
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Box, VStack, Input, Text } from "@chakra-ui/react";
+import { Button } from "./ui/button";
+import { addExerciseToWorkout } from "../api/workout-exercises";
+import { AddExerciseRequest } from "../types/api";
+import { useAuth } from "react-oidc-context";
 
 interface Props {
   workoutId: string;
 }
 
 const AddExerciseToWorkout: React.FC<Props> = ({ workoutId }) => {
-  const { control, handleSubmit } = useForm<Omit<AddExerciseRequest, 'workoutId'>>();
-  const [message, setMessage] = useState<string>('');
+  const { control, handleSubmit } =
+    useForm<Omit<AddExerciseRequest, "workoutId">>();
+  const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated || !user) return;
 
-  const onSubmit = async (data: Omit<AddExerciseRequest, 'workoutId'>) => {
+  const onSubmit = async (data: Omit<AddExerciseRequest, "workoutId">) => {
     setLoading(true);
-    setMessage('');
+    setMessage("");
 
     try {
-      await addExerciseToWorkout({ ...data, workoutId });
-      setMessage('Exercise Added Successfully!');
+      await addExerciseToWorkout(user, { ...data, workout_id: workoutId });
+      setMessage("Exercise Added Successfully!");
     } catch (error: any) {
-      setMessage(error.response?.data?.message || 'Failed to add exercise.');
+      setMessage(error.response?.data?.message || "Failed to add exercise.");
     } finally {
       setLoading(false);
     }
@@ -32,22 +36,28 @@ const AddExerciseToWorkout: React.FC<Props> = ({ workoutId }) => {
     <Box p={5} borderWidth={1} borderRadius="lg">
       <VStack as="form" gap={4} onSubmit={handleSubmit(onSubmit)}>
         <Controller
-          name="exerciseId"
+          name="exercise_id"
           control={control}
           defaultValue=""
-          render={({ field }) => <Input {...field} placeholder="Exercise ID" required />}
+          render={({ field }) => (
+            <Input {...field} placeholder="Exercise ID" required />
+          )}
         />
         <Controller
           name="sets"
           control={control}
           defaultValue={0}
-          render={({ field }) => <Input {...field} type="number" placeholder="Sets" required />}
+          render={({ field }) => (
+            <Input {...field} type="number" placeholder="Sets" required />
+          )}
         />
         <Controller
           name="reps"
           control={control}
           defaultValue={0}
-          render={({ field }) => <Input {...field} type="number" placeholder="Reps" required />}
+          render={({ field }) => (
+            <Input {...field} type="number" placeholder="Reps" required />
+          )}
         />
         <Button colorScheme="teal" type="submit" loading={loading}>
           Add Exercise

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { Box, VStack, Input, Text } from '@chakra-ui/react';
-import { Button } from './ui/button';
-import { createWorkout } from '../api/workouts';
-import { CreateWorkoutRequest } from '../types/api';
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Box, VStack, Input, Text } from "@chakra-ui/react";
+import { Button } from "./ui/button";
+import { createWorkout } from "../api/workouts";
+import { CreateWorkoutRequest } from "../types/api";
+import { useAuth } from "react-oidc-context";
 
 interface Props {
   programId: string;
@@ -11,18 +12,19 @@ interface Props {
 
 const CreateWorkout: React.FC<Props> = ({ programId }) => {
   const { control, handleSubmit } = useForm<CreateWorkoutRequest>();
-  const [message, setMessage] = useState<string>('');
+  const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-
-  const onSubmit = async (data: Omit<CreateWorkoutRequest, 'programId'>) => {
+  const { user, isAuthenticated } = useAuth();
+  const onSubmit = async (data: Omit<CreateWorkoutRequest, "programId">) => {
+    if (!isAuthenticated || !user) return;
     setLoading(true);
-    setMessage('');
+    setMessage("");
 
     try {
-      await createWorkout(programId, { ...data, programId });
-      setMessage('Workout Created Successfully!');
+      await createWorkout(user, programId, { ...data });
+      setMessage("Workout Created Successfully!");
     } catch (error: any) {
-      setMessage(error.response?.data?.message || 'Failed to create workout.');
+      setMessage(error.response?.data?.message || "Failed to create workout.");
     } finally {
       setLoading(false);
     }
@@ -35,7 +37,9 @@ const CreateWorkout: React.FC<Props> = ({ programId }) => {
           name="name"
           control={control}
           defaultValue=""
-          render={({ field }) => <Input {...field} placeholder="Workout Name" required />}
+          render={({ field }) => (
+            <Input {...field} placeholder="Workout Name" required />
+          )}
         />
         <Button colorScheme="teal" type="submit" loading={loading}>
           Create Workout
