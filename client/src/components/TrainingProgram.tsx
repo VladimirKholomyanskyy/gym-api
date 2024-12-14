@@ -2,6 +2,7 @@ import {
   createTrainingProgram,
   deleteTrainingProgram,
   getAllTrainingPrograms,
+  updateTrainingProgram,
 } from "@/api/trainingPrograms";
 import { TrainingProgram } from "@/types/api";
 import {
@@ -9,27 +10,38 @@ import {
   Text,
   Flex,
   Input,
-  List,
-  ListItem,
   Spinner,
   VStack,
-  IconButton,
+  Stack,
 } from "@chakra-ui/react";
-import { Toaster, toaster } from "@/components/ui/toaster";
+import { toaster } from "@/components/ui/toaster";
 import { Button } from "./ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { setupAxiosInterceptors } from "@/api/apiClient";
-import { FaTrash } from "react-icons/fa";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Field } from "./ui/field";
+import TrainingProgramCard from "./TrainingProgramCard";
 
 const TrainingPrograms: React.FC = () => {
   const auth = useAuth();
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [newProgram, setNewProgram] = useState({ name: "", description: "" });
+  const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadPrograms = async () => {
+      console.log("load training programs");
       try {
         setupAxiosInterceptors(() => auth.user?.access_token || null);
         const data = await getAllTrainingPrograms();
@@ -41,14 +53,13 @@ const TrainingPrograms: React.FC = () => {
       }
     };
     loadPrograms();
-  }, [auth]);
+  }, [auth.user]);
 
   // Add a program
   const handleAddProgram = async () => {
     if (!newProgram.name.trim()) {
       return;
     }
-
     try {
       const created = await createTrainingProgram(newProgram);
       setPrograms((prev) => [...prev, created]);
@@ -59,7 +70,7 @@ const TrainingPrograms: React.FC = () => {
   };
 
   // Delete a program
-  const handleDeleteProgram = async (id: string) => {
+  const handleDeleteProgram = async (id: number) => {
     try {
       await deleteTrainingProgram(id);
       setPrograms((prev) => prev.filter((program) => program.id !== id));
@@ -67,6 +78,31 @@ const TrainingPrograms: React.FC = () => {
       console.log("Failed to delete program");
     }
   };
+
+  const handleUpdateProgram = async (
+    id: number,
+    name: string,
+    description: string
+  ) => {
+    const currentProgram = programs.find((program) => program.id === id);
+
+    // Check if the name or description is actually changed
+    if (
+      currentProgram &&
+      currentProgram.name === name.trim() &&
+      currentProgram.description === description.trim()
+    ) {
+      console.log("No changes detected. Skipping update.");
+      return; // Exit the function without performing an update
+    }
+    try {
+      await updateTrainingProgram(id, { name, description });
+      setPrograms((prev) => prev.filter((program) => program.id !== id));
+    } catch (error) {
+      console.log("Failed to update program");
+    }
+  };
+
   return (
     <Box p={4} maxW="sm" mx="auto">
       <Text fontSize="xl" fontWeight="bold" textAlign="center" mb={4}>
@@ -79,58 +115,73 @@ const TrainingPrograms: React.FC = () => {
         </Flex>
       ) : (
         <>
-          <VStack gap={4} mb={6}>
-            <Input
-              placeholder="Program Name"
-              value={newProgram.name}
-              onChange={(e) =>
-                setNewProgram((prev) => ({ ...prev, name: e.target.value }))
-              }
-            />
-            <Input
-              placeholder="Description"
-              value={newProgram.description}
-              onChange={(e) =>
-                setNewProgram((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-            />
-            <Button colorScheme="teal" width="full" onClick={handleAddProgram}>
-              Add Program
-            </Button>
-          </VStack>
-
-          <List.Root gap={3}>
+          <VStack gap={4} mb={6} align="stretch">
             {programs.map((program) => (
-              <ListItem
+              <TrainingProgramCard
                 key={program.id}
-                p={3}
-                border="1px"
-                borderColor="gray.200"
-                borderRadius="md"
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Box>
-                  <Text fontWeight="bold">{program.name}</Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {program.description}
-                  </Text>
-                </Box>
-                <IconButton
-                  aria-label="Delete"
-                  size="sm"
-                  colorScheme="red"
-                  onClick={() => handleDeleteProgram(program.id)}
-                >
-                  <FaTrash />
-                </IconButton>
-              </ListItem>
+                id={program.id}
+                name={program.name}
+                description={program.description}
+                onDelete={handleDeleteProgram}
+                onUpdate={handleUpdateProgram}
+              />
             ))}
-          </List.Root>
+            <DialogRoot initialFocusEl={() => ref.current}>
+              <DialogTrigger asChild>
+                <Button
+                  bottom="16px"
+                  right="16px"
+                  position="fixed"
+                  variant="outline"
+                  background="green"
+                >
+                  New
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>New Training Program</DialogTitle>
+                </DialogHeader>
+                <DialogBody pb="4">
+                  <Stack gap="4">
+                    <Field label="Name">
+                      <Input
+                        ref={ref}
+                        placeholder="Training program name"
+                        value={newProgram.name}
+                        onChange={(e) =>
+                          setNewProgram((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                    <Field label="Description">
+                      <Input
+                        placeholder="Description"
+                        value={newProgram.description}
+                        onChange={(e) =>
+                          setNewProgram((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </Stack>
+                </DialogBody>
+                <DialogFooter>
+                  <DialogActionTrigger asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogActionTrigger>
+                  <DialogActionTrigger asChild>
+                    <Button onClick={handleAddProgram}>Save</Button>
+                  </DialogActionTrigger>
+                </DialogFooter>
+              </DialogContent>
+            </DialogRoot>
+          </VStack>
         </>
       )}
     </Box>

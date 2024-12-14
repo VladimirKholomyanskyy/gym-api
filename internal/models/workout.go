@@ -12,3 +12,8 @@ type Workout struct {
 type CreateWorkoutRequest struct {
 	Name string `json:"name"`
 }
+
+type WorkoutResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}

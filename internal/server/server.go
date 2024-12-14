@@ -68,7 +68,8 @@ func NewServer() *http.Server {
 	trainingProgramHandler := handlers.NewTrainingProgramHandler(trainingProgramService)
 	workoutExerciseHandler := handlers.NewWorkoutExerciseHandler(trainingProgramService)
 
-	seed.SeedExercises(exerciseRepo)
+	dataSeed := seed.NewDatabaseSeed(exerciseRepo, workoutRepo, trainingProgramRepo, workoutExerciseRepo)
+	dataSeed.Seed()
 
 	client_id := os.Getenv("CLIENT_ID")
 	issuer := os.Getenv("ISSUER")

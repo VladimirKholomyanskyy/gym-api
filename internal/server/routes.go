@@ -12,28 +12,29 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"}, // Allow specific origin
-		AllowedMethods:   []string{"GET", "PUT", "DELETE", "POST", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "PUT", "DELETE", "POST", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	})
 
-	r.Handle("/users/me", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.UserHandler.GetUser))).Methods("GET")
-	r.Handle("/users/me", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.UserHandler.UpdateUser))).Methods("PUT")
-	r.HandleFunc("/users/me", s.UserHandler.DeleteUser).Methods("DELETE")
+	r.HandleFunc("/users/me", s.UserHandler.GetUser).Methods("GET")
+	r.HandleFunc("/users/me", s.UserHandler.UpdateUser).Methods("PUT")
 
-	r.Handle("/exercises", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.ExerciseHandler.GetAllExercises))).Methods("GET")
-	// r.Handle("/exercises", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.ExerciseHandler.GetAllExercises))).Methods("GET")
+	r.HandleFunc("/exercises", s.ExerciseHandler.GetAllExercises).Methods("GET")
+	r.HandleFunc("/exercises/{exercise_id:[0-9]+}", s.ExerciseHandler.HandleGetExercise).Methods("GET")
+	r.HandleFunc("/training-programs", s.TrainingProgram.HandleCreateProgram).Methods("POST")
+	r.HandleFunc("/training-programs/{id:[0-9]+}", s.TrainingProgram.HandleGetProgram).Methods("GET")
+	r.HandleFunc("/training-programs/{id:[0-9]+}", s.TrainingProgram.HandleDeleteProgram).Methods("DELETE")
+	r.HandleFunc("/training-programs/{program_id:[0-9]+}", s.TrainingProgram.HandleUpdateProgram).Methods("PATCH")
+	r.HandleFunc("/training-programs", s.TrainingProgram.HandleGetAllUserPrograms).Methods("GET")
+	r.HandleFunc("/training-programs/{program_id:[0-9]+}/workouts", s.TrainingProgram.HandleAddWorkoutToProgram).Methods("POST")
+	r.HandleFunc("/training-programs/{program_id:[0-9]+}/workouts", s.TrainingProgram.HandleGetAllWorkouts).Methods("GET")
+	r.HandleFunc("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.TrainingProgram.HandleRemoveWorkoutFromProgram).Methods("DELETE")
+	r.HandleFunc("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.TrainingProgram.HandleUpdateWorkoutOfProgram).Methods("PUT")
+	r.HandleFunc("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.TrainingProgram.HandleGetWorkoutForProgram).Methods("GET")
+	r.HandleFunc("/workout-exercises", s.WorkoutExerciseHandler.HandleCreateWorkoutExercise).Methods("POST")
+	r.HandleFunc("/workout-exercises", s.WorkoutExerciseHandler.HandleListWorkoutExercises).Methods("GET")
 
-	r.Handle("/training-programs", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleCreateProgram))).Methods("POST")
-	r.Handle("/training-programs/{id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleDeleteProgram))).Methods("DELETE")
-	r.Handle("/training-programs", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleGetAllUserPrograms))).Methods("GET")
-	r.Handle("/training-programs/{program_id:[0-9]+}/workouts", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleAddWorkoutToProgram))).Methods("POST")
-	r.Handle("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleRemoveWorkoutFromProgram))).Methods("DELETE")
-	r.Handle("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.TrainingProgram.HandleUpdateWorkoutOfProgram))).Methods("PUT")
-
-	r.Handle("/workout-exercises", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.WorkoutExerciseHandler.HandleCreateWorkoutExercise))).Methods("POST")
-	r.Handle("/workout-exercises", s.KeycloakMiddleware.Authenticate(http.HandlerFunc(s.WorkoutExerciseHandler.HandleListWorkoutExercises))).Methods("GET")
-
-	handler := c.Handler(r)
+	handler := c.Handler(s.KeycloakMiddleware.Authenticate(r))
 	return handler
 }

@@ -22,6 +22,12 @@ func (r *ExerciseRepository) FindAll() ([]models.Exercise, error) {
 	return exercises, err
 }
 
+func (r *ExerciseRepository) FindByID(id uint) (*models.Exercise, error) {
+	var exercise models.Exercise
+	err := r.db.First(&exercise, id).Error
+	return &exercise, err
+}
+
 func (r *ExerciseRepository) FindByPrimaryMuscle(primaryMuscle string) ([]models.Exercise, error) {
 	var exercises []models.Exercise
 	if err := r.db.Where("primary_muscle = ?", primaryMuscle).Find(&exercises).Error; err != nil {

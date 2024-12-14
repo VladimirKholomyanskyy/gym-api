@@ -1,16 +1,20 @@
-import apiClient from './apiClient';
-import { AddExerciseRequest } from '../types/api';
-import { User } from 'oidc-client-ts';
+import apiClient from "./apiClient";
+import { AddExerciseRequest, WorkoutExercise } from "../types/api";
 
-export const addExerciseToWorkout = async (user: User,
+export const addExerciseToWorkout = async (
   data: AddExerciseRequest
-): Promise<void> => {
-  await apiClient.post('/workout-exercises', 
-    data,
-    {
-      headers: {
-        Authorization: `Bearer ${user.access_token}`,
-      }
+): Promise<WorkoutExercise> => {
+  const response = await apiClient.post("/workout-exercises", data);
+  return response.data;
+};
+
+export const getAllWorkoutExercises = async (
+  workout_id: number
+): Promise<WorkoutExercise[]> => {
+  const response = await apiClient.get("/workout-exercises", {
+    params: {
+      parent: `workout/${workout_id}`,
     },
-);
+  });
+  return response.data || [];
 };

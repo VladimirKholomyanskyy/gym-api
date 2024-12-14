@@ -8,26 +8,33 @@ export interface CreateWorkoutRequest {
 }
 
 export interface AddExerciseRequest {
-  exercise_id: string;
-  workout_id: string;
+  exercise_id: number;
+  workout_id: number;
   sets: number;
   reps: number;
 }
 
 export interface Exercise {
-  ID: string;
+  ID: number;
   Name: string;
   Description?: string;
 }
 
 export interface TrainingProgram {
-  id: string;
+  id: number;
   name: string;
-  description?: string;
+  description: string;
 }
 
 export interface Workout {
-  ID: string;
-  Name: string;
-  TrainingProgramID: string;
+  id: number;
+  name: string;
+}
+
+export interface WorkoutExercise {
+  id: number;
+  workout_id: number;
+  exercise_id: number;
+  sets: number;
+  reps: number;
 }

@@ -43,17 +43,31 @@ func (s *TrainingProgramService) GetAllTrainingPrograms(userId uint) ([]models.T
 	return programs, nil
 }
 
+func (s *TrainingProgramService) GetTrainingProgram(userId uint, programId uint) (*models.TrainingProgram, error) {
+	program, err := s.trainingProgramRepository.FindByIDAndUserID(programId, userId)
+	if err != nil {
+		return nil, err
+	}
+	return program, nil
+}
+
 func (s *TrainingProgramService) DeleteTrainingProgram(userId, program_id uint) error {
 	return s.trainingProgramRepository.Delete(program_id, userId)
 }
 
-func (s *TrainingProgramService) UpdateTrainingProgram(input models.CreateTrainingProgramRequest, userID uint) (*models.TrainingProgram, error) {
-	program := &models.TrainingProgram{
-		Name:        input.Name,
-		Description: input.Description,
-		UserID:      userID,
+func (s *TrainingProgramService) UpdateTrainingProgram(input models.CreateTrainingProgramRequest, userID uint, programID uint) (*models.TrainingProgram, error) {
+	program, err := s.trainingProgramRepository.FindByIDAndUserID(programID, userID)
+	if err != nil {
+		return nil, err
 	}
-	err := s.trainingProgramRepository.Update(program)
+	if input.Name != "" {
+		program.Name = input.Name
+	}
+	if input.Description != "" {
+		program.Description = input.Description
+	}
+
+	err = s.trainingProgramRepository.Update(program)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +86,43 @@ func (s *TrainingProgramService) AddWorkoutToProgram(input models.CreateWorkoutR
 		return nil, err
 	}
 	return workout, nil
+}
+
+func (s *TrainingProgramService) UpdateWorkout(input models.CreateWorkoutRequest, userID uint, programID uint, workoutId uint) (*models.Workout, error) {
+	_, err := s.trainingProgramRepository.FindByIDAndUserID(programID, userID)
+	if err != nil {
+		return nil, err
+	}
+	workout, err := s.workoutRepository.FindByID(workoutId)
+	if err != nil {
+		return nil, err
+	}
+	workout.Name = input.Name
+	err = s.workoutRepository.Update(workout)
+	if err != nil {
+		return nil, err
+	}
+	return workout, nil
+}
+
+func (s *TrainingProgramService) GetAllWorkouts(userID, programID uint) ([]models.Workout, error) {
+	_, err := s.trainingProgramRepository.FindByIDAndUserID(programID, userID)
+	if err != nil {
+		return nil, err
+	}
+	workouts, err := s.workoutRepository.FindByTrainingProgramID(programID)
+	if err != nil {
+		return nil, err
+	}
+	return workouts, err
+}
+
+func (s *TrainingProgramService) DeleteWorkout(userId, program_id, workoutID uint) error {
+	return s.workoutRepository.Delete(workoutID)
+}
+
+func (s *TrainingProgramService) GetWorkout(userId, program_id, workoutID uint) (*models.Workout, error) {
+	return s.workoutRepository.FindByID(workoutID)
 }
 
 func (s *TrainingProgramService) AddExerciseToWorkout(input models.CreateWorkoutExerciseRequest, userID uint) (*models.WorkoutExercise, error) {

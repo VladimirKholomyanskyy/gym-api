@@ -20,3 +20,7 @@ func (s *ExerciseService) GetExercisesByPrimaryMuscle(primaryMuscle string) ([]m
 func (s *ExerciseService) GetAllExercises() ([]models.Exercise, error) {
 	return s.repo.FindAll()
 }
+
+func (s *ExerciseService) GetExercise(id uint) (*models.Exercise, error) {
+	return s.repo.FindByID(id)
+}

@@ -1,17 +1,18 @@
 import "./App.css";
-import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router";
 import AuthPage from "./components/AuthPage";
 import PrivateRoute from "./components/PrivateRoute";
 import Dashboard from "./components/Dashboard";
-import TrainingProgramFlow from "./components/TrainingProgramFlow";
 import BottomNav from "./components/BottomNavigate";
 import { Box, Flex } from "@chakra-ui/react";
 import TrainingPrograms from "./components/TrainingProgram";
+import TrainingProgramPage from "./components/TrainingProgramPage";
+import WorkoutPage from "./components/WorkoutPage";
 
 const ProtectedDashboard = PrivateRoute(Dashboard);
-const ProtectedTrainingProgramFlow = PrivateRoute(TrainingProgramFlow);
+const ProtectedTrainingProgramPage = PrivateRoute(TrainingProgramPage);
 const ProtectedTrainingProgram = PrivateRoute(TrainingPrograms);
+const ProtectedWorkout = PrivateRoute(WorkoutPage);
 
 function App() {
   return (
@@ -24,6 +25,14 @@ function App() {
             <Route
               path="/training-programs"
               element={<ProtectedTrainingProgram />}
+            />
+            <Route
+              path="/training-programs/:programId/workouts"
+              element={<ProtectedTrainingProgramPage />}
+            />
+            <Route
+              path="/training-programs/:programId/workouts/:workoutId"
+              element={<ProtectedWorkout />}
             />
           </Routes>
         </Box>

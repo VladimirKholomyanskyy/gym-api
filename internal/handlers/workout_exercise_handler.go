@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ func NewWorkoutExerciseHandler(service *service.TrainingProgramService) *Workout
 }
 
 func (h *WorkoutExerciseHandler) HandleCreateWorkoutExercise(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request add exercise to a workout")
 	var request models.CreateWorkoutExerciseRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -26,17 +28,20 @@ func (h *WorkoutExerciseHandler) HandleCreateWorkoutExercise(w http.ResponseWrit
 	}
 	userID := r.Context().Value(UserIDKey).(uint)
 
-	response, err := h.service.AddExerciseToWorkout(request, userID)
+	workoutExercise, err := h.service.AddExerciseToWorkout(request, userID)
 	if err != nil {
 		http.Error(w, "Failed to create workout exercise", http.StatusInternalServerError)
 		return
 	}
+	response := models.WorkoutExerciseResponse{ID: workoutExercise.ID, WorkoutID: workoutExercise.WorkoutID,
+		ExerciseID: workoutExercise.ExerciseID, Sets: workoutExercise.Sets, Reps: workoutExercise.Reps}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 
 func (h *WorkoutExerciseHandler) HandleListWorkoutExercises(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request get all exercises of a workout")
 	parent := r.URL.Query().Get("parent")
 	if parent == "" {
 		http.Error(w, "Missing parent parameter", http.StatusBadRequest)
@@ -50,20 +55,30 @@ func (h *WorkoutExerciseHandler) HandleListWorkoutExercises(w http.ResponseWrite
 	userID := r.Context().Value(UserIDKey).(uint)
 
 	parentType, parentID := parts[0], parts[1]
+
+	if parentType != "workout" {
+		http.Error(w, "Not valid parent type", http.StatusBadRequest)
+	}
+
 	workoutID, err := strconv.Atoi(parentID)
 	if err != nil {
 		http.Error(w, "Invalid parent id", http.StatusBadRequest)
 	}
 
-	if parentType != "workout" {
-		http.Error(w, "Not valid parent type", http.StatusBadRequest)
-	}
 	workoutExercises, err := h.service.GetAllWorkoutExercisesByWorkout(userID, uint(workoutID))
 	if err != nil {
 		http.Error(w, "Failed to fetch workout exercise", http.StatusInternalServerError)
 		return
 	}
+
+	var response []models.WorkoutExerciseResponse
+
+	for _, workoutExercise := range workoutExercises {
+		response = append(response, models.WorkoutExerciseResponse{ID: workoutExercise.ID, WorkoutID: workoutExercise.WorkoutID,
+			ExerciseID: workoutExercise.ExerciseID, Sets: workoutExercise.Sets, Reps: workoutExercise.Reps})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(workoutExercises)
+	json.NewEncoder(w).Encode(response)
 }
