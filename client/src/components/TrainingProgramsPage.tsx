@@ -12,70 +12,97 @@ import {
   Input,
   Spinner,
   VStack,
-  Stack,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { toaster } from "@/components/ui/toaster";
 import { Button } from "./ui/button";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "react-oidc-context";
-import { setupAxiosInterceptors } from "@/api/apiClient";
-import {
-  DialogActionTrigger,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
 import { Field } from "./ui/field";
 import TrainingProgramCard from "./TrainingProgramCard";
+import {
+  DrawerActionTrigger,
+  DrawerBackdrop,
+  DrawerBody,
+  DrawerCloseTrigger,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerRoot,
+  DrawerTrigger,
+} from "./ui/drawer";
 
-const TrainingPrograms: React.FC = () => {
-  const auth = useAuth();
+const TrainingProgramsPage: React.FC = () => {
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [newProgram, setNewProgram] = useState({ name: "", description: "" });
   const ref = useRef<HTMLInputElement>(null);
-
+  const { onClose } = useDisclosure();
   useEffect(() => {
     const loadPrograms = async () => {
       console.log("load training programs");
       try {
-        setupAxiosInterceptors(() => auth.user?.access_token || null);
         const data = await getAllTrainingPrograms();
         setPrograms(data);
       } catch (error) {
-        toaster.create({ title: "Failed to load training programs" });
+        toaster.create({
+          title: "Failed to load training programs.",
+          description: "Please try again later.",
+          type: "error",
+          duration: 5000,
+        });
       } finally {
         setLoading(false);
       }
     };
     loadPrograms();
-  }, [auth.user]);
+  }, []);
 
   // Add a program
   const handleAddProgram = async () => {
     if (!newProgram.name.trim()) {
+      toaster.create({
+        title: "Program name is required.",
+        type: "error",
+        duration: 3000,
+      });
       return;
     }
     try {
       const created = await createTrainingProgram(newProgram);
       setPrograms((prev) => [...prev, created]);
       setNewProgram({ name: "", description: "" });
+      toaster.create({
+        title: "Training program created.",
+        type: "success",
+        duration: 3000,
+      });
+      onClose();
     } catch (error) {
-      console.log("Failed to add program");
+      toaster.create({
+        title: "Failed to create training program.",
+        description: "Please try again later.",
+        type: "error",
+        duration: 5000,
+      });
     }
   };
 
-  // Delete a program
   const handleDeleteProgram = async (id: number) => {
     try {
       await deleteTrainingProgram(id);
       setPrograms((prev) => prev.filter((program) => program.id !== id));
+      toaster.create({
+        title: "Training program deleted.",
+        type: "success",
+        duration: 3000,
+      });
     } catch (error) {
-      console.log("Failed to delete program");
+      toaster.create({
+        title: "Failed to delete training program.",
+        description: "Please try again later.",
+        type: "error",
+        duration: 5000,
+      });
     }
   };
 
@@ -86,36 +113,44 @@ const TrainingPrograms: React.FC = () => {
   ) => {
     const currentProgram = programs.find((program) => program.id === id);
 
-    // Check if the name or description is actually changed
     if (
       currentProgram &&
       currentProgram.name === name.trim() &&
       currentProgram.description === description.trim()
     ) {
-      console.log("No changes detected. Skipping update.");
-      return; // Exit the function without performing an update
+      return;
     }
     try {
       await updateTrainingProgram(id, { name, description });
       setPrograms((prev) => prev.filter((program) => program.id !== id));
+      toaster.create({
+        title: "Training program updated.",
+        type: "success",
+        duration: 3000,
+      });
     } catch (error) {
-      console.log("Failed to update program");
+      toaster.create({
+        title: "Failed to update training program.",
+        description: "Please try again later.",
+        type: "error",
+        duration: 5000,
+      });
     }
   };
 
   return (
-    <Box p={4} maxW="sm" mx="auto">
-      <Text fontSize="xl" fontWeight="bold" textAlign="center" mb={4}>
+    <Box p={4} width="100%">
+      <Text fontSize="2xl" fontWeight="bold" textAlign="center" mb={6}>
         Training Programs
       </Text>
 
       {loading ? (
-        <Flex justifyContent="center" alignItems="center" height="100vh">
-          <Spinner />
+        <Flex justifyContent="center" alignItems="center" height="50vh">
+          <Spinner size="xl" />
         </Flex>
       ) : (
         <>
-          <VStack gap={4} mb={6} align="stretch">
+          <VStack gap={6} align="stretch" width="100%">
             {programs.map((program) => (
               <TrainingProgramCard
                 key={program.id}
@@ -126,24 +161,18 @@ const TrainingPrograms: React.FC = () => {
                 onUpdate={handleUpdateProgram}
               />
             ))}
-            <DialogRoot initialFocusEl={() => ref.current}>
-              <DialogTrigger asChild>
-                <Button
-                  bottom="16px"
-                  right="16px"
-                  position="fixed"
-                  variant="outline"
-                  background="green"
-                >
-                  New
+            <DrawerRoot placement="bottom">
+              <DrawerBackdrop />
+              <DrawerTrigger asChild>
+                <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
+                  Add Program
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>New Training Program</DialogTitle>
-                </DialogHeader>
-                <DialogBody pb="4">
-                  <Stack gap="4">
+              </DrawerTrigger>
+              <DrawerContent ref={ref}>
+                <DrawerCloseTrigger />
+                <DrawerHeader>Add a New Training Program</DrawerHeader>
+                <DrawerBody>
+                  <VStack gap={4}>
                     <Field label="Name">
                       <Input
                         ref={ref}
@@ -169,18 +198,20 @@ const TrainingPrograms: React.FC = () => {
                         }
                       />
                     </Field>
-                  </Stack>
-                </DialogBody>
-                <DialogFooter>
-                  <DialogActionTrigger asChild>
+                  </VStack>
+                </DrawerBody>
+                <DrawerFooter>
+                  <DrawerActionTrigger asChild>
                     <Button variant="outline">Cancel</Button>
-                  </DialogActionTrigger>
-                  <DialogActionTrigger asChild>
-                    <Button onClick={handleAddProgram}>Save</Button>
-                  </DialogActionTrigger>
-                </DialogFooter>
-              </DialogContent>
-            </DialogRoot>
+                  </DrawerActionTrigger>
+                  <DrawerActionTrigger asChild>
+                    <Button colorScheme="teal" onClick={handleAddProgram}>
+                      Save
+                    </Button>
+                  </DrawerActionTrigger>
+                </DrawerFooter>
+              </DrawerContent>
+            </DrawerRoot>
           </VStack>
         </>
       )}
@@ -188,4 +219,4 @@ const TrainingPrograms: React.FC = () => {
   );
 };
 
-export default TrainingPrograms;
+export default TrainingProgramsPage;

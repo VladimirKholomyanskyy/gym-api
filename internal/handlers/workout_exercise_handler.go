@@ -9,6 +9,7 @@ import (
 
 	"github.com/VladimirKholomyanskyy/gym-api/internal/models"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/service"
+	"github.com/gorilla/mux"
 )
 
 type WorkoutExerciseHandler struct {
@@ -81,4 +82,45 @@ func (h *WorkoutExerciseHandler) HandleListWorkoutExercises(w http.ResponseWrite
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *WorkoutExerciseHandler) HandlePatchWorkoutExercise(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request to patch workout exercise")
+	userID := r.Context().Value(UserIDKey).(uint)
+	params := mux.Vars(r)
+	workoutExerciseId, err := strconv.Atoi(params["workout_exercise_id"])
+	if err != nil {
+		http.Error(w, "Invalid id", http.StatusBadRequest)
+	}
+	var request models.CreateWorkoutExerciseRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	workoutExercise, err := h.service.UpdateWorkoutExercise(request, userID, uint(workoutExerciseId))
+	if err != nil {
+		http.Error(w, "Failed to update workout exercise", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(models.WorkoutExerciseResponse{ID: workoutExercise.ID, WorkoutID: workoutExercise.WorkoutID,
+		ExerciseID: workoutExercise.ExerciseID, Sets: workoutExercise.Sets, Reps: workoutExercise.Reps})
+}
+
+func (h *WorkoutExerciseHandler) HandleDeletehWorkoutExercise(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request delete workout exercise")
+	userID := r.Context().Value(UserIDKey).(uint)
+	params := mux.Vars(r)
+	workoutExerciseId, err := strconv.Atoi(params["workout_exercise_id"])
+	if err != nil {
+		http.Error(w, "Invalid id", http.StatusBadRequest)
+	}
+	err = h.service.DeleteWorkoutExercise(userID, uint(workoutExerciseId))
+	if err != nil {
+		http.Error(w, "Failed to delete workout exercise", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }

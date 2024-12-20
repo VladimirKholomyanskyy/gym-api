@@ -165,6 +165,50 @@ func (s *TrainingProgramService) GetAllWorkoutExercisesByWorkout(userID uint, wo
 	return workoutExercises, nil
 }
 
+func (s *TrainingProgramService) UpdateWorkoutExercise(input models.CreateWorkoutExerciseRequest, userID uint, weID uint) (*models.WorkoutExercise, error) {
+	workout, err := s.workoutRepository.FindByID(input.WorkoutID)
+	if err != nil || workout == nil {
+		return nil, errors.New("workout not found")
+	}
+	program, err := s.trainingProgramRepository.FindByIDAndUserID(workout.TrainingProgramID, userID)
+	if err != nil || program == nil {
+		return nil, errors.New("workout does not belong to user's training program")
+	}
+	workoutExercise, err := s.workoutExerciseRepository.FindByID(weID)
+	if err != nil {
+		return nil, err
+	}
+	if input.ExerciseID > 0 {
+		workoutExercise.ExerciseID = input.ExerciseID
+	}
+	if input.Sets > 0 {
+		workoutExercise.Sets = input.Sets
+	}
+	if input.Reps > 0 {
+		workoutExercise.Reps = input.Reps
+	}
+	err = s.workoutExerciseRepository.Update(workoutExercise)
+	if err != nil {
+		return nil, err
+	}
+	return workoutExercise, nil
+}
+func (s *TrainingProgramService) DeleteWorkoutExercise(userID uint, weID uint) error {
+	workoutExercise, err := s.workoutExerciseRepository.FindByID(weID)
+	if err != nil {
+		return err
+	}
+	workout, err := s.workoutRepository.FindByID(workoutExercise.WorkoutID)
+	if err != nil {
+		return err
+	}
+	_, err = s.trainingProgramRepository.FindByIDAndUserID(workout.TrainingProgramID, userID)
+	if err != nil {
+		return err
+	}
+	return s.workoutExerciseRepository.Delete(weID)
+
+}
 func (s *TrainingProgramService) GetAllWorkoutExercisesByExercise(userID uint, exerciseID uint) {
 
 }

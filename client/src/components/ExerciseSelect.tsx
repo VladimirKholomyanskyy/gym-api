@@ -10,23 +10,22 @@ import { createListCollection } from "@chakra-ui/react/collection";
 
 const ExerciseSelect: React.FC<{
   exercises: Exercise[];
-  selectedExerciseId: string[];
-  contentRef: React.RefObject<HTMLElement>;
+  defaultExerciseId?: string;
+  contentRef: React.RefObject<HTMLDivElement>;
   setSelectedExerciseId: (ids: string[]) => void;
-}> = ({ exercises, selectedExerciseId, contentRef, setSelectedExerciseId }) => {
+}> = ({ exercises, defaultExerciseId, contentRef, setSelectedExerciseId }) => {
   const collection = createListCollection({
-    items: exercises.map((exercise) => ({
-      label: exercise.Name,
-      value: exercise.ID.toString(),
-    })),
+    items: exercises,
+    itemToString: (item) => item.Name,
+    itemToValue: (item) => item.ID.toString(),
   });
 
+  console.log(defaultExerciseId);
   return (
     <SelectRoot
       collection={collection}
-      value={selectedExerciseId}
+      defaultValue={defaultExerciseId ? [defaultExerciseId] : []}
       onValueChange={({ value }) => {
-        console.log("Selected Value:", value);
         setSelectedExerciseId(value);
       }}
     >
@@ -35,7 +34,7 @@ const ExerciseSelect: React.FC<{
       </SelectTrigger>
       <SelectContent portalRef={contentRef}>
         {exercises.map((exercise) => (
-          <SelectItem key={exercise.ID} item={String(exercise.ID)}>
+          <SelectItem key={exercise.ID} item={exercise}>
             {exercise.Name}
           </SelectItem>
         ))}

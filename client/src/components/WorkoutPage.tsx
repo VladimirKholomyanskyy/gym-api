@@ -1,8 +1,9 @@
-import { setupAxiosInterceptors } from "@/api/apiClient";
 import { getExercise, listExercises } from "@/api/exercises";
 import {
   addExerciseToWorkout,
+  deleteWorkoutExercise,
   getAllWorkoutExercises,
+  patchWorkoutExercise,
 } from "@/api/workout-exercises";
 import { getWorkout } from "@/api/workouts";
 import { AddExerciseRequest, Exercise, Workout } from "@/types/api";
@@ -10,13 +11,11 @@ import {
   Box,
   Flex,
   Heading,
-  IconButton,
   NumberInputRoot,
   Spinner,
   VStack,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "react-oidc-context";
 import { useNavigate, useParams } from "react-router";
 import ExerciseCard from "./ExercisesCard";
 import {
@@ -32,8 +31,8 @@ import {
 } from "./ui/drawer";
 import { Button } from "./ui/button";
 import { NumberInputField } from "./ui/number-input";
-import { FaPlus } from "react-icons/fa";
 import ExerciseSelect from "./ExerciseSelect";
+import { toaster } from "./ui/toaster";
 
 interface ExerciseCardProps {
   id: number;
@@ -52,11 +51,9 @@ const WorkoutPage: React.FC = () => {
   const programID = Number(programId);
   const workoutID = Number(workoutId);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
   const [selectedExerciseId, setSelectedExerciseId] = useState<string[]>([]);
   const [sets, setSets] = useState<number>(3);
   const [reps, setReps] = useState<number>(10);
-  const auth = useAuth();
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +65,6 @@ const WorkoutPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setupAxiosInterceptors(() => auth.user?.access_token || null);
         const workout = await getWorkout(programID, workoutID);
         const workoutExercises = await getAllWorkoutExercises(workoutID);
         const exercises = await Promise.all(
@@ -90,13 +86,12 @@ const WorkoutPage: React.FC = () => {
         setExercisesSelect(exercisesData);
       } catch (error) {
         console.error("Failed to load data:", error);
-        setMessage("Failed to load workout details.");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [auth.user?.access_token, programId, workoutId]);
+  }, [programId, workoutId]);
 
   const handleSubmit = async () => {
     if (!selectedExerciseId) {
@@ -129,12 +124,46 @@ const WorkoutPage: React.FC = () => {
     } catch (error) {}
   };
 
+  const handleEdit = async (
+    workoutExerciseId: number,
+    exerciseId: number,
+    sets: number,
+    reps: number
+  ) => {
+    const requestData: AddExerciseRequest = {
+      exercise_id: Number(exerciseId),
+      workout_id: Number(workoutId),
+      sets,
+      reps,
+    };
+
+    try {
+      await patchWorkoutExercise(workoutExerciseId, requestData);
+    } catch (error) {}
+  };
+  const handleDeleteWorkoutExercise = async (id: number) => {
+    try {
+      await deleteWorkoutExercise(id);
+      toaster.create({
+        title: "Removed exercise.",
+        type: "success",
+        duration: 3000,
+      });
+    } catch (error) {
+      toaster.create({
+        title: "Failed to remove exercise.",
+        description: "Please try again later.",
+        type: "error",
+        duration: 5000,
+      });
+    }
+  };
   return (
     <Box p={5}>
-      <VStack gap={4} minHeight="100%">
+      <VStack gap={6} align="stretch">
         <Heading size="4xl">{workout?.name}</Heading>
         {loading ? (
-          <Flex justifyContent="center" alignItems="center" height="100%">
+          <Flex justifyContent="center" alignItems="center" height="50vh">
             <Spinner />
           </Flex>
         ) : (
@@ -144,6 +173,17 @@ const WorkoutPage: React.FC = () => {
               exercise={exercise.exerciseName}
               sets={exercise.sets}
               reps={exercise.reps}
+              contentRef={contentRef}
+              onDelete={() => handleDeleteWorkoutExercise(exercise.id)}
+              exercises={exercisesSelect}
+              onEdit={function (
+                exerciseId: number,
+                reps: number,
+                sets: number
+              ): void {
+                handleEdit(exercise.id, exerciseId, sets, reps);
+              }}
+              exerciseId={exercise.exerciseId}
             />
           ))
         )}
@@ -152,17 +192,9 @@ const WorkoutPage: React.FC = () => {
       <DrawerRoot placement="bottom">
         <DrawerBackdrop />
         <DrawerTrigger asChild>
-          <IconButton
-            colorScheme="teal"
-            aria-label="Add Exercise"
-            position="fixed"
-            bottom={4}
-            right={4}
-            size="lg"
-            borderRadius="full"
-          >
-            <FaPlus />
-          </IconButton>
+          <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
+            Add Exercise
+          </Button>
         </DrawerTrigger>
         <DrawerContent ref={contentRef}>
           <DrawerCloseTrigger />
@@ -173,8 +205,8 @@ const WorkoutPage: React.FC = () => {
               <ExerciseSelect
                 exercises={exercisesSelect}
                 contentRef={contentRef}
-                selectedExerciseId={selectedExerciseId}
                 setSelectedExerciseId={setSelectedExerciseId}
+                defaultExerciseId={""}
               />
               <NumberInputRoot
                 defaultValue="3"

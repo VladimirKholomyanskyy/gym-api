@@ -34,6 +34,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.HandleFunc("/training-programs/{program_id:[0-9]+}/workouts/{workout_id:[0-9]+}", s.TrainingProgram.HandleGetWorkoutForProgram).Methods("GET")
 	r.HandleFunc("/workout-exercises", s.WorkoutExerciseHandler.HandleCreateWorkoutExercise).Methods("POST")
 	r.HandleFunc("/workout-exercises", s.WorkoutExerciseHandler.HandleListWorkoutExercises).Methods("GET")
+	r.HandleFunc("/workout-exercises/{workout_exercise_id:[0-9]+}", s.WorkoutExerciseHandler.HandlePatchWorkoutExercise).Methods("PATCH")
+	r.HandleFunc("/workout-exercises/{workout_exercise_id:[0-9]+}", s.WorkoutExerciseHandler.HandleDeletehWorkoutExercise).Methods("DELETE")
 
 	handler := c.Handler(s.KeycloakMiddleware.Authenticate(r))
 	return handler

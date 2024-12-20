@@ -38,7 +38,7 @@ export const deleteTrainingProgram = async (
 export const updateTrainingProgram = async (
   programId: number,
   data: CreateTrainingProgramRequest
-): Promise<boolean> => {
+): Promise<TrainingProgram> => {
   console.log(`name=${data.name}`);
   console.log(`desc=${data.description}`);
   const response = await apiClient.patch(

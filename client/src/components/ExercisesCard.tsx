@@ -1,6 +1,6 @@
-import { Card, IconButton, Stack } from "@chakra-ui/react";
+import { Box, Card, IconButton, Stack, VStack } from "@chakra-ui/react";
 import { Button } from "./ui/button";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 import {
   DialogActionTrigger,
   DialogBody,
@@ -12,20 +12,55 @@ import {
   DialogTrigger,
   DialogRoot,
 } from "./ui/dialog";
+import {
+  DrawerActionTrigger,
+  DrawerBackdrop,
+  DrawerBody,
+  DrawerCloseTrigger,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerRoot,
+  DrawerTrigger,
+} from "./ui/drawer";
+import ExerciseSelect from "./ExerciseSelect";
+import { NumberInputField, NumberInputRoot } from "./ui/number-input";
+import { Exercise } from "@/types/api";
+import { useState } from "react";
 
 export interface ExerciseCardProps {
+  exerciseId: number;
   exercise: string;
+  exercises: Exercise[];
   sets: number;
   reps: number;
+  contentRef: React.RefObject<HTMLDivElement>;
+  onDelete: () => void;
+  onEdit: (exerciseId: number, reps: number, sets: number) => void;
 }
 
-const ExerciseCard = ({ exercise, sets, reps }: ExerciseCardProps) => {
+const ExerciseCard = ({
+  exerciseId,
+  exercise,
+  exercises,
+  sets,
+  reps,
+  contentRef,
+  onDelete,
+  onEdit,
+}: ExerciseCardProps) => {
+  const [setsLocal, setSetsLocal] = useState<number>(sets);
+  const [repsLocal, setRepsLocal] = useState<number>(reps);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string[]>([]);
+
   return (
-    <Card.Root>
+    <Card.Root size="sm">
       <Card.Body>
         <Stack gap={4}>
-          <Card.Title>{exercise}</Card.Title>
-          <Card.Description>{`Sets: ${sets} Reps: ${reps}`}</Card.Description>
+          <Box>
+            <Card.Title>{exercise}</Card.Title>
+            <Card.Description>{`Sets: ${sets} Reps: ${reps}`}</Card.Description>
+          </Box>
         </Stack>
       </Card.Body>
       <Card.Footer
@@ -33,13 +68,65 @@ const ExerciseCard = ({ exercise, sets, reps }: ExerciseCardProps) => {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Button colorScheme="blue">View / Edit</Button>
-        <IconButton colorScheme="gray" aria-label="Edit name">
-          <FaEdit />
-        </IconButton>
+        <DrawerRoot placement="bottom">
+          <DrawerBackdrop />
+          <DrawerTrigger asChild>
+            <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
+              Edit Exercise
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent ref={contentRef}>
+            <DrawerCloseTrigger />
+            <DrawerHeader>Edit Exercise</DrawerHeader>
+
+            <DrawerBody>
+              <VStack gap={4}>
+                <ExerciseSelect
+                  exercises={exercises}
+                  defaultExerciseId={exerciseId.toString()}
+                  contentRef={contentRef}
+                  setSelectedExerciseId={setSelectedExerciseId}
+                />
+                <NumberInputRoot
+                  defaultValue={sets.toString()}
+                  min={1}
+                  onValueChange={(e) => setSetsLocal(e.valueAsNumber)}
+                >
+                  <NumberInputField placeholder="Number of Sets" />
+                </NumberInputRoot>
+
+                <NumberInputRoot
+                  defaultValue={reps.toString()}
+                  min={1}
+                  onValueChange={(e) => setRepsLocal(e.valueAsNumber)}
+                >
+                  <NumberInputField placeholder="Number of Reps" />
+                </NumberInputRoot>
+              </VStack>
+            </DrawerBody>
+
+            <DrawerFooter>
+              <DrawerActionTrigger asChild>
+                <Button variant="outline">Cancel</Button>
+              </DrawerActionTrigger>
+              <Button
+                colorScheme="teal"
+                onClick={() =>
+                  onEdit(Number(selectedExerciseId), repsLocal, setsLocal)
+                }
+              >
+                Save
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </DrawerRoot>
         <DialogRoot role="alertdialog">
           <DialogTrigger asChild>
-            <IconButton colorScheme="red" aria-label="Delete Workout">
+            <IconButton
+              colorScheme="red"
+              aria-label="Delete Workout"
+              onClick={onDelete}
+            >
               <FaTrash />
             </IconButton>
           </DialogTrigger>
