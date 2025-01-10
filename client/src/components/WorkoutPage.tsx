@@ -33,6 +33,7 @@ import { Button } from "./ui/button";
 import { NumberInputField } from "./ui/number-input";
 import ExerciseSelect from "./ExerciseSelect";
 import { toaster } from "./ui/toaster";
+import { createWorkoutSession } from "@/api/workout-sessions";
 
 interface ExerciseCardProps {
   id: number;
@@ -158,6 +159,11 @@ const WorkoutPage: React.FC = () => {
       });
     }
   };
+
+  const handleNavigate = async () => {
+    const response = await createWorkoutSession({ workout_id: workoutID });
+    navigate(`/workout-session/${response.session_id}/edit`);
+  };
   return (
     <Box p={5}>
       <VStack gap={6} align="stretch">
@@ -196,6 +202,7 @@ const WorkoutPage: React.FC = () => {
             Add Exercise
           </Button>
         </DrawerTrigger>
+        <Button onClick={handleNavigate}>Start Workout</Button>
         <DrawerContent ref={contentRef}>
           <DrawerCloseTrigger />
           <DrawerHeader>Add a New Exercise</DrawerHeader>

@@ -37,6 +37,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.HandleFunc("/workout-exercises/{workout_exercise_id:[0-9]+}", s.WorkoutExerciseHandler.HandlePatchWorkoutExercise).Methods("PATCH")
 	r.HandleFunc("/workout-exercises/{workout_exercise_id:[0-9]+}", s.WorkoutExerciseHandler.HandleDeletehWorkoutExercise).Methods("DELETE")
 
+	r.HandleFunc("/workout-sessions", s.WorkoutLogsHandler.HandleCreateWorkoutSession).Methods("POST")
+	r.HandleFunc("/workout-sessions", s.WorkoutLogsHandler.HandleGetWorkoutSessions).Methods("GET")
+	r.HandleFunc("/workout-sessions/{workout_session_id:[0-9]+}/finish", s.WorkoutLogsHandler.HandleFinishWorkoutSession).Methods("POST")
+	r.HandleFunc("/workout-sessions/{workout_session_id:[0-9]+}", s.WorkoutLogsHandler.HandleGetWorkoutSession).Methods("GET")
+	r.HandleFunc("/workout-sessions/{workout_session_id:[0-9]+}/logs", s.WorkoutLogsHandler.HandleCreateExerciseLog).Methods("POST")
+	r.HandleFunc("/workout-sessions/{workout_session_id:[0-9]+}/logs", s.WorkoutLogsHandler.HandleGetExerciseLogs).Methods("GET")
+	r.HandleFunc("/workout-sessions/{workout_session_id:[0-9]+}/logs/{log_id:[0-9]+}", s.WorkoutLogsHandler.HandleGetExerciseLogs).Methods("GET")
+
 	handler := c.Handler(s.KeycloakMiddleware.Authenticate(r))
 	return handler
 }

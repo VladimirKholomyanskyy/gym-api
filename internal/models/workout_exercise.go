@@ -9,6 +9,7 @@ type WorkoutExercise struct {
 	Sets       int
 	Reps       int
 	Weight     float64
+	Exercise   Exercise `gorm:"foreignKey:ID;references:ExerciseID"`
 }
 
 type CreateWorkoutExerciseRequest struct {

@@ -1,12 +1,10 @@
-import { Provider } from "@/components/ui/provider"
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from 'react-oidc-context';
-import { User } from "oidc-client-ts"
-
-
+import { Provider } from "@/components/ui/provider";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.tsx";
+import { AuthProvider } from "react-oidc-context";
+import { User, WebStorageStateStore } from "oidc-client-ts";
 
 const oidcConfig = {
   authority: "http://localhost:8070/realms/gainz",
@@ -20,14 +18,15 @@ const oidcConfig = {
       window.location.pathname // Clean up the URL by removing query parameters
     );
   },
+  userStore: new WebStorageStateStore({ store: window.localStorage }),
 };
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider {...oidcConfig}>
-        <Provider>
-          <App />
-        </Provider>
+      <Provider>
+        <App />
+      </Provider>
     </AuthProvider>
-</StrictMode>
-)
+  </StrictMode>
+);

@@ -21,7 +21,7 @@ func (r *WorkoutRepository) Create(workout *models.Workout) error {
 // Get retrieves a Workout by ID
 func (r *WorkoutRepository) FindByID(id uint) (*models.Workout, error) {
 	var workout models.Workout
-	err := r.db.Preload("Exercises").First(&workout, id).Error
+	err := r.db.Debug().Preload("Exercises.Exercise").First(&workout, id).Error
 	return &workout, err
 }
 

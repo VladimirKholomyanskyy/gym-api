@@ -27,6 +27,7 @@ type Server struct {
 	ExerciseHandler        *handlers.ExerciseHandler
 	TrainingProgram        *handlers.TrainingProgramHandler
 	WorkoutExerciseHandler *handlers.WorkoutExerciseHandler
+	WorkoutLogsHandler     *handlers.WorkoutLogsHandler
 }
 
 func NewServer() *http.Server {
@@ -56,17 +57,20 @@ func NewServer() *http.Server {
 	trainingProgramRepo := repository.NewTrainingProgramRepository(db)
 	workoutRepo := repository.NewWorkoutRepository(db)
 	workoutExerciseRepo := repository.NewWorkoutExerciseRepository(db)
+	workoutSessionRepo := repository.NewWorkoutLogRepository(db)
+	exerciseLogsRepo := repository.NewExerciseLogRepository(db)
 
 	// Initializing service layer
 	userService := service.NewUserService(userRepo)
 	exerciseService := service.NewExerciseService(exerciseRepo)
-	trainingProgramService := service.NewTrainingProgramService(trainingProgramRepo, workoutRepo, workoutExerciseRepo)
+	trainingProgramService := service.NewTrainingProgramService(trainingProgramRepo, workoutRepo, workoutExerciseRepo, workoutSessionRepo, exerciseLogsRepo)
 
 	// Initializing application layer
 	userHandler := &handlers.UserHandler{Service: userService}
 	exerciseHandler := &handlers.ExerciseHandler{Service: exerciseService}
 	trainingProgramHandler := handlers.NewTrainingProgramHandler(trainingProgramService)
 	workoutExerciseHandler := handlers.NewWorkoutExerciseHandler(trainingProgramService)
+	workoutLogsHandler := handlers.NewWorkoutLogsHandler(trainingProgramService)
 
 	dataSeed := seed.NewDatabaseSeed(exerciseRepo, workoutRepo, trainingProgramRepo, workoutExerciseRepo)
 	dataSeed.Seed()
@@ -86,6 +90,7 @@ func NewServer() *http.Server {
 		TrainingProgram:        trainingProgramHandler,
 		WorkoutExerciseHandler: workoutExerciseHandler,
 		KeycloakMiddleware:     KeycloakMiddleware,
+		WorkoutLogsHandler:     workoutLogsHandler,
 	}
 
 	// Declare Server config

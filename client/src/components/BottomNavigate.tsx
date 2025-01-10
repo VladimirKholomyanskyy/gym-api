@@ -25,7 +25,7 @@ const BottomNav = () => {
       </IconButton>
       <IconButton
         aria-label="Workouts"
-        onClick={() => navigate("/workouts")}
+        onClick={() => navigate("/workout-sessions")}
         variant="ghost"
         color="white"
       >

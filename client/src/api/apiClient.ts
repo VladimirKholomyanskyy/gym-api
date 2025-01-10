@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useAuth } from "react-oidc-context";
+import { User } from "oidc-client-ts";
 
 const apiClient = axios.create({
   baseURL: "http://localhost:8080",
@@ -8,12 +8,26 @@ const apiClient = axios.create({
   },
 });
 
-export const setupAxiosInterceptors = (getToken: () => string | null) => {
+function getUser() {
+  const oidcStorage = localStorage.getItem(
+    `oidc.user:http://localhost:8070/realms/gainz:react-client`
+  );
+  if (!oidcStorage) {
+    return null;
+  }
+
+  return User.fromStorageString(oidcStorage);
+}
+export const setupAxiosInterceptors = () => {
   apiClient.interceptors.request.use(
     (config) => {
-      const token = getToken();
+      const user = getUser();
+      const token = user?.access_token;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log("token valid");
+      } else {
+        console.log("token not valid");
       }
       return config;
     },

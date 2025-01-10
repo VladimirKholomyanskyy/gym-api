@@ -6,7 +6,7 @@ type Workout struct {
 	gorm.Model
 	Name              string
 	TrainingProgramID uint
-	Exercises         []WorkoutExercise `gorm:"many2many:workout_exercises"` // Association with WorkoutExercise
+	Exercises         []WorkoutExercise
 }
 
 type CreateWorkoutRequest struct {

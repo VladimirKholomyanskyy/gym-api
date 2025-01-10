@@ -1,7 +1,10 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/VladimirKholomyanskyy/gym-api/internal/models"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/repository"
@@ -11,16 +14,23 @@ type TrainingProgramService struct {
 	trainingProgramRepository *repository.TrainingProgramRepository
 	workoutRepository         *repository.WorkoutRepository
 	workoutExerciseRepository *repository.WorkoutExerciseRepository
+	workoutSessionRepository  *repository.WorkoutSessionRepository
+	exerciseLogsRespository   *repository.ExerciseLogRepository
 }
 
 func NewTrainingProgramService(trainingProgramRepository *repository.TrainingProgramRepository,
 	workoutRepository *repository.WorkoutRepository,
 	workoutExerciseRepository *repository.WorkoutExerciseRepository,
+	workoutSessionRepository *repository.WorkoutSessionRepository,
+	exerciseLogsRespository *repository.ExerciseLogRepository,
 ) *TrainingProgramService {
 	return &TrainingProgramService{
 		trainingProgramRepository: trainingProgramRepository,
 		workoutRepository:         workoutRepository,
-		workoutExerciseRepository: workoutExerciseRepository}
+		workoutExerciseRepository: workoutExerciseRepository,
+		workoutSessionRepository:  workoutSessionRepository,
+		exerciseLogsRespository:   exerciseLogsRespository,
+	}
 }
 
 func (s *TrainingProgramService) CreateTrainingProgram(input models.CreateTrainingProgramRequest, userID uint) (*models.TrainingProgram, error) {
@@ -209,6 +219,108 @@ func (s *TrainingProgramService) DeleteWorkoutExercise(userID uint, weID uint) e
 	return s.workoutExerciseRepository.Delete(weID)
 
 }
-func (s *TrainingProgramService) GetAllWorkoutExercisesByExercise(userID uint, exerciseID uint) {
 
+func (s *TrainingProgramService) StartWorkoutSession(userID uint, input models.StartWorkoutSessionRequest) (*models.WorkoutSession, error) {
+	workout, err := s.workoutRepository.FindByID(input.WorkoutID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.trainingProgramRepository.FindByIDAndUserID(workout.TrainingProgramID, userID)
+	if err != nil {
+		return nil, err
+	}
+	jsonData, err := json.Marshal(workout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal workout: %w", err)
+	}
+	workoutSession := &models.WorkoutSession{UserID: userID, WorkoutID: input.WorkoutID, Snapshot: jsonData}
+	err = s.workoutSessionRepository.Create(workoutSession)
+	if err != nil {
+		return nil, err
+	}
+	return workoutSession, nil
+}
+
+func (s *TrainingProgramService) FinishWorkoutSession(userID uint, sessionID uint) (*models.WorkoutSession, error) {
+	session, err := s.workoutSessionRepository.GetByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if session.UserID != userID {
+		return nil, errors.New("not owned by user")
+	}
+	currnetTime := time.Now()
+	session.CompletedAt = &currnetTime
+	err = s.workoutSessionRepository.Update(session)
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+func (s *TrainingProgramService) GetAllWorkoutSessions(userID uint) ([]models.WorkoutSession, error) {
+	sessions, err := s.workoutSessionRepository.GetAllByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return sessions, err
+}
+
+func (s *TrainingProgramService) GetAllWorkoutSession(userID uint, sessionID uint) (*models.WorkoutSession, error) {
+	session, err := s.workoutSessionRepository.GetByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if session.UserID != userID {
+		return nil, fmt.Errorf("not owned by the user: %w", err)
+	}
+	return session, err
+}
+
+func (s *TrainingProgramService) LogExercise(userID uint, sessionID uint, input models.LogExerciseRequest) (*models.ExerciseLog, error) {
+	session, err := s.workoutSessionRepository.GetByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if session.UserID != userID {
+		return nil, fmt.Errorf("not owned by the user: %w", err)
+	}
+	exerciseLog := &models.ExerciseLog{SessionID: sessionID, ExerciseID: input.ExerciseID, SetNumber: input.SetNumber, Reps: input.RepsCompleted, Weight: input.WeightUsed}
+	err = s.exerciseLogsRespository.Create(exerciseLog)
+	if err != nil {
+		return nil, err
+	}
+	return exerciseLog, nil
+}
+
+func (s *TrainingProgramService) GetExerciseLog(userID uint, sessionID uint, logID uint) (*models.ExerciseLog, error) {
+	session, err := s.workoutSessionRepository.GetByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if session.UserID != userID {
+		return nil, fmt.Errorf("not owned by the user: %w", err)
+	}
+	log, err := s.exerciseLogsRespository.GetByID(logID)
+	if err != nil {
+		return nil, err
+	}
+	return log, nil
+
+}
+
+func (s *TrainingProgramService) GetExerciseLogs(userID uint, sessionID uint) ([]models.ExerciseLog, error) {
+	session, err := s.workoutSessionRepository.GetByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if session.UserID != userID {
+		return nil, fmt.Errorf("not owned by the user: %w", err)
+	}
+	logs, err := s.exerciseLogsRespository.GetAllByWorkoutLogID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	return logs, nil
 }
