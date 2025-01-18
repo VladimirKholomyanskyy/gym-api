@@ -9,7 +9,6 @@ import TrainingProgramPage from "./components/TrainingProgramPage";
 import WorkoutPage from "./components/WorkoutPage";
 import { hasAuthParams, useAuth } from "react-oidc-context";
 import React from "react";
-import { setupAxiosInterceptors } from "./api/apiClient";
 import TrainingProgramsPage from "./components/TrainingProgramsPage";
 import ReadOnlyWorkoutSessionWrapper from "./components/ReadOnlyWorkoutSessionWrapper";
 import EditableWorkoutWrapper from "./components/EditableWorkoutSessionWrapper";
@@ -42,7 +41,6 @@ function App() {
       auth.signinRedirect();
       setHasTriedSignin(true);
     }
-    setupAxiosInterceptors();
   }, [auth, hasTriedSignin]);
 
   if (auth.isLoading) {

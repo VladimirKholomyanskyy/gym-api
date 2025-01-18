@@ -1,27 +1,33 @@
-import { getExerciseLogs } from "@/api/exercise-logs";
-import { getWorkoutSession } from "@/api/workout-sessions";
-import { WSWorkoutSessionResponse, LogExerciseResponse } from "@/types/api";
 import { useState, useEffect } from "react";
-import { useParams, Navigate } from "react-router";
+import { useParams, Navigate, useNavigate } from "react-router";
 import ReadOnlyWorkoutSession from "./ReadOnlyWorkoutSession";
+import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
+import { WorkoutSessionsApi } from "@/api";
+import { apiConfig } from "@/api/apiConfig";
 
 const ReadOnlyWorkoutSessionWrapper = () => {
   const { id } = useParams();
   const [workoutSession, setWorkoutSession] =
-    useState<WSWorkoutSessionResponse | null>(null);
+    useState<WorkoutSessionResponse | null>(null);
   const [exerciseLogs, setExerciseLogs] = useState<LogExerciseResponse[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
+  const navigate = useNavigate();
+  if (!id) {
+    navigate("/error");
+    return null;
+  }
   useEffect(() => {
     const fetchWorkoutSession = async () => {
       try {
-        const session = await getWorkoutSession(Number(id));
-        console.log("read session=", session);
-        setWorkoutSession(session);
-        const exLogs = await getExerciseLogs(Number(id));
-        setExerciseLogs(exLogs);
+        const session = await workoutSessionApi.getWorkoutSession(id);
+        console.log("Fetched session:", session);
+        setWorkoutSession(session.data);
+        const exLogs = await workoutSessionApi.listExerciseLogs(id);
+        console.log("Fetched logs:", exLogs);
+        setExerciseLogs(exLogs.data);
       } catch (error) {
-        console.error("Read Error fetching workout session:", error);
+        console.error("Error fetching workout session:", error);
       } finally {
         setLoading(false);
       }
@@ -33,7 +39,7 @@ const ReadOnlyWorkoutSessionWrapper = () => {
   if (loading) return <div>Loading...</div>;
 
   console.log("Read only");
-  if (workoutSession?.completed_at) {
+  if (workoutSession?.completedAt) {
     return (
       <ReadOnlyWorkoutSession session={workoutSession} logs={exerciseLogs} />
     );

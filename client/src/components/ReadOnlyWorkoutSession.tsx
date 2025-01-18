@@ -1,42 +1,42 @@
-import { LogExerciseResponse, WSWorkoutSessionResponse } from "@/types/api";
 import { For, Heading, Stack, Text } from "@chakra-ui/react";
 import CompletedExerciseLog, {
   CompletedExerciseLogItem,
 } from "./CompletedExerciseLog";
+import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
 
 const ReadOnlyWorkoutSession = ({
   session,
   logs,
 }: {
-  session: WSWorkoutSessionResponse;
+  session: WorkoutSessionResponse;
   logs: LogExerciseResponse[];
 }) => {
   const computedLogItems =
-    session?.workout_snapshot?.Exercises.map((exercise) => {
+    session?.workoutSnapshot?.workoutExercises?.map((exercise) => {
       const found: CompletedExerciseLogItem[] = logs
-        .filter((e) => exercise.ExerciseID === e.exercise_id)
+        .filter((e) => exercise.id === e.id)
         .map((log) => ({
-          setNumber: log.set_number,
-          repsCompleted: log.reps_completed,
-          weightCompleted: log.weight_used,
+          setNumber: log.setNumber,
+          repsCompleted: log.repsCompleted,
+          weightCompleted: log.weightUsed,
         }))
         .sort((a, b) => a.setNumber - b.setNumber);
       return {
-        exerciseName: exercise.Exercise.Name,
+        exerciseName: exercise.exercise?.name,
         items: found,
       };
     }) || [];
 
   return (
     <Stack>
-      <Heading>{session.workout_snapshot.Name}</Heading>
-      <Text>Started at: {session.started_at}</Text>
-      <Text>Completed at: {session.completed_at}</Text>
+      <Heading>{session.workoutSnapshot.name}</Heading>
+      <Text>Started at: {session.startedAt}</Text>
+      <Text>Completed at: {session.completedAt}</Text>
       <For each={computedLogItems}>
         {(item, index) => (
           <CompletedExerciseLog
             key={index}
-            exerciseName={item.exerciseName}
+            exerciseName={item.exerciseName ? item.exerciseName : ""}
             items={item.items}
           />
         )}

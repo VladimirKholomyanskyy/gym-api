@@ -15,11 +15,11 @@ import {
 import { useNavigate } from "react-router";
 
 export interface WorkoutCardProps {
-  workoutId: number;
-  programId: number;
+  workoutId: string;
+  programId: string;
   name: string;
   exercises: string[];
-  onDelete: (programId: number, workoutId: number) => void;
+  onDelete: (programId: string, workoutId: string) => void;
 }
 
 const WorkoutCard = ({

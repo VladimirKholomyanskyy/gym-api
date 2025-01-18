@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/VladimirKholomyanskyy/gym-api/internal/account"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/auth"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/handlers"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/repository"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/progress"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/seed"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/service"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/training"
 	"github.com/joho/godotenv"
 
 	// _ "github.com/joho/godotenv/autoload"
@@ -23,11 +23,11 @@ import (
 type Server struct {
 	port                   int
 	KeycloakMiddleware     *auth.KeycloakMiddleware
-	UserHandler            *handlers.UserHandler
-	ExerciseHandler        *handlers.ExerciseHandler
-	TrainingProgram        *handlers.TrainingProgramHandler
-	WorkoutExerciseHandler *handlers.WorkoutExerciseHandler
-	WorkoutLogsHandler     *handlers.WorkoutLogsHandler
+	UserHandler            *account.UserHandler
+	ExerciseHandler        *training.ExerciseHandler
+	TrainingProgram        *training.TrainingProgramHandler
+	WorkoutExerciseHandler *training.WorkoutExerciseHandler
+	WorkoutLogsHandler     *progress.WorkoutProgressHandler
 }
 
 func NewServer() *http.Server {
@@ -52,25 +52,25 @@ func NewServer() *http.Server {
 	}
 
 	// Initializing data layer
-	userRepo := repository.NewUserRepository(db)
-	exerciseRepo := repository.NewExerciseRepository(db)
-	trainingProgramRepo := repository.NewTrainingProgramRepository(db)
-	workoutRepo := repository.NewWorkoutRepository(db)
-	workoutExerciseRepo := repository.NewWorkoutExerciseRepository(db)
-	workoutSessionRepo := repository.NewWorkoutLogRepository(db)
-	exerciseLogsRepo := repository.NewExerciseLogRepository(db)
+	userRepo := account.NewUserRepository(db)
+	exerciseRepo := training.NewExerciseRepository(db)
+	trainingProgramRepo := training.NewTrainingProgramRepository(db)
+	workoutRepo := training.NewWorkoutRepository(db)
+	workoutExerciseRepo := training.NewWorkoutExerciseRepository(db)
+	workoutSessionRepo := progress.NewWorkoutLogRepository(db)
+	exerciseLogsRepo := progress.NewExerciseLogRepository(db)
 
 	// Initializing service layer
-	userService := service.NewUserService(userRepo)
-	exerciseService := service.NewExerciseService(exerciseRepo)
-	trainingProgramService := service.NewTrainingProgramService(trainingProgramRepo, workoutRepo, workoutExerciseRepo, workoutSessionRepo, exerciseLogsRepo)
+	userService := account.NewUserService(userRepo)
+	trainingProgramService := training.NewTrainingManager(trainingProgramRepo, workoutRepo, workoutExerciseRepo, exerciseRepo)
+	workoutProgressManager := progress.NewWorkoutProgressManager(trainingProgramService, workoutSessionRepo, exerciseLogsRepo)
 
 	// Initializing application layer
-	userHandler := &handlers.UserHandler{Service: userService}
-	exerciseHandler := &handlers.ExerciseHandler{Service: exerciseService}
-	trainingProgramHandler := handlers.NewTrainingProgramHandler(trainingProgramService)
-	workoutExerciseHandler := handlers.NewWorkoutExerciseHandler(trainingProgramService)
-	workoutLogsHandler := handlers.NewWorkoutLogsHandler(trainingProgramService)
+	userHandler := &account.UserHandler{Service: userService}
+	exerciseHandler := training.NewExerciseHandler(trainingProgramService)
+	trainingProgramHandler := training.NewTrainingProgramHandler(trainingProgramService)
+	workoutExerciseHandler := training.NewWorkoutExerciseHandler(trainingProgramService)
+	workoutLogsHandler := progress.NewWorkoutProgressHandler(workoutProgressManager)
 
 	dataSeed := seed.NewDatabaseSeed(exerciseRepo, workoutRepo, trainingProgramRepo, workoutExerciseRepo)
 	dataSeed.Seed()

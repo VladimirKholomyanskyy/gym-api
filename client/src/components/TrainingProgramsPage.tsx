@@ -1,11 +1,4 @@
 import {
-  createTrainingProgram,
-  deleteTrainingProgram,
-  getAllTrainingPrograms,
-  updateTrainingProgram,
-} from "@/api/trainingPrograms";
-import { TrainingProgram } from "@/types/api";
-import {
   Box,
   Text,
   Flex,
@@ -30,6 +23,8 @@ import {
   DrawerRoot,
   DrawerTrigger,
 } from "./ui/drawer";
+import { TrainingProgram, TrainingProgramsApi } from "@/api";
+import { apiConfig } from "@/api/apiConfig";
 
 const TrainingProgramsPage: React.FC = () => {
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
@@ -37,13 +32,17 @@ const TrainingProgramsPage: React.FC = () => {
   const [newProgram, setNewProgram] = useState({ name: "", description: "" });
   const ref = useRef<HTMLInputElement>(null);
   const { onClose } = useDisclosure();
+  const trainingProgramApi = new TrainingProgramsApi(apiConfig);
+
   useEffect(() => {
     const loadPrograms = async () => {
       console.log("load training programs");
+      setLoading(true); // Ensure loading is set to true when the function starts
       try {
-        const data = await getAllTrainingPrograms();
-        setPrograms(data);
+        const response = await trainingProgramApi.listTrainingPrograms();
+        setPrograms(response.data);
       } catch (error) {
+        console.error("Error loading training programs:", error);
         toaster.create({
           title: "Failed to load training programs.",
           description: "Please try again later.",
@@ -51,9 +50,10 @@ const TrainingProgramsPage: React.FC = () => {
           duration: 5000,
         });
       } finally {
-        setLoading(false);
+        setLoading(false); // Set loading to false regardless of success or failure
       }
     };
+
     loadPrograms();
   }, []);
 
@@ -68,8 +68,10 @@ const TrainingProgramsPage: React.FC = () => {
       return;
     }
     try {
-      const created = await createTrainingProgram(newProgram);
-      setPrograms((prev) => [...prev, created]);
+      const created = await trainingProgramApi.createTrainingProgram(
+        newProgram
+      );
+      setPrograms((prev) => [...prev, created.data]);
       setNewProgram({ name: "", description: "" });
       toaster.create({
         title: "Training program created.",
@@ -87,9 +89,9 @@ const TrainingProgramsPage: React.FC = () => {
     }
   };
 
-  const handleDeleteProgram = async (id: number) => {
+  const handleDeleteProgram = async (id: string) => {
     try {
-      await deleteTrainingProgram(id);
+      await trainingProgramApi.deleteTrainingProgram(id);
       setPrograms((prev) => prev.filter((program) => program.id !== id));
       toaster.create({
         title: "Training program deleted.",
@@ -107,7 +109,7 @@ const TrainingProgramsPage: React.FC = () => {
   };
 
   const handleUpdateProgram = async (
-    id: number,
+    id: string,
     name: string,
     description: string
   ) => {
@@ -121,7 +123,7 @@ const TrainingProgramsPage: React.FC = () => {
       return;
     }
     try {
-      await updateTrainingProgram(id, { name, description });
+      await trainingProgramApi.updateTrainingProgram(id, { name, description });
       setPrograms((prev) => prev.filter((program) => program.id !== id));
       toaster.create({
         title: "Training program updated.",

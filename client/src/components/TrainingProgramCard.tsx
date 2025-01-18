@@ -15,11 +15,11 @@ import {
 } from "./ui/dialog";
 
 interface TrainingProgramCardProps {
-  id: number; // or number, depending on your program's ID type
+  id: string; // or number, depending on your program's ID type
   name: string;
-  description: string;
-  onDelete: (id: number) => void; // or number, depending on your ID type
-  onUpdate: (id: number, newName: string, newDescription: string) => void;
+  description?: string;
+  onDelete: (id: string) => void; // or number, depending on your ID type
+  onUpdate: (id: string, newName: string, newDescription: string) => void;
 }
 
 const TrainingProgramCard = ({

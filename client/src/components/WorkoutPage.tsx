@@ -1,12 +1,3 @@
-import { getExercise, listExercises } from "@/api/exercises";
-import {
-  addExerciseToWorkout,
-  deleteWorkoutExercise,
-  getAllWorkoutExercises,
-  patchWorkoutExercise,
-} from "@/api/workout-exercises";
-import { getWorkout } from "@/api/workouts";
-import { AddExerciseRequest, Exercise, Workout } from "@/types/api";
 import {
   Box,
   Flex,
@@ -33,12 +24,23 @@ import { Button } from "./ui/button";
 import { NumberInputField } from "./ui/number-input";
 import ExerciseSelect from "./ExerciseSelect";
 import { toaster } from "./ui/toaster";
-import { createWorkoutSession } from "@/api/workout-sessions";
+import {
+  Exercise,
+  WorkoutExerciseRequest,
+  WorkoutResponse,
+} from "@/api/models";
+import {
+  ExercisesApi,
+  WorkoutExercisesApi,
+  WorkoutsApi,
+  WorkoutSessionsApi,
+} from "@/api";
+import { apiConfig } from "@/api/apiConfig";
 
 interface ExerciseCardProps {
-  id: number;
+  id: string;
   exerciseName: string;
-  exerciseId: number;
+  exerciseId: string;
   sets: number;
   reps: number;
 }
@@ -46,17 +48,19 @@ interface ExerciseCardProps {
 const WorkoutPage: React.FC = () => {
   const [exercises, setExercises] = useState<ExerciseCardProps[]>([]);
   const [exercisesSelect, setExercisesSelect] = useState<Exercise[]>([]);
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [workout, setWorkout] = useState<WorkoutResponse | null>(null);
   const { programId } = useParams();
   const { workoutId } = useParams();
-  const programID = Number(programId);
-  const workoutID = Number(workoutId);
   const [loading, setLoading] = useState(true);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string[]>([]);
   const [sets, setSets] = useState<number>(3);
   const [reps, setReps] = useState<number>(10);
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
+  const workoutApi = new WorkoutsApi(apiConfig);
+  const workoutExercisesApi = new WorkoutExercisesApi(apiConfig);
+  const exerciseApi = new ExercisesApi(apiConfig);
+  const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
 
   if (!programId || !workoutId) {
     navigate("/error");
@@ -66,25 +70,32 @@ const WorkoutPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const workout = await getWorkout(programID, workoutID);
-        const workoutExercises = await getAllWorkoutExercises(workoutID);
+        const workout = await workoutApi.getWorkoutForProgram(
+          programId,
+          workoutId
+        );
+        const workoutExercises = await workoutExercisesApi.listWorkoutExercises(
+          workoutId
+        );
         const exercises = await Promise.all(
-          workoutExercises.map(async (workoutExercise) => {
-            const exercise = await getExercise(workoutExercise.exercise_id);
+          workoutExercises.data.map(async (workoutExercise) => {
+            const exercise = await exerciseApi.getExerciseById(
+              workoutExercise.exerciseId
+            );
 
             return {
               id: workoutExercise.id,
-              exerciseName: exercise.Name,
-              exerciseId: exercise.ID,
+              exerciseName: exercise.data.name,
+              exerciseId: exercise.data.id,
               sets: workoutExercise.sets,
               reps: workoutExercise.reps,
             };
           })
         );
-        const exercisesData = await listExercises();
-        setWorkout(workout);
+        const exercisesData = await exerciseApi.listExercises();
+        setWorkout(workout.data);
         setExercises(exercises);
-        setExercisesSelect(exercisesData);
+        setExercisesSelect(exercisesData.data);
       } catch (error) {
         console.error("Failed to load data:", error);
       } finally {
@@ -99,23 +110,27 @@ const WorkoutPage: React.FC = () => {
       return;
     }
 
-    const requestData: AddExerciseRequest = {
-      exercise_id: Number(selectedExerciseId),
-      workout_id: Number(workoutId),
+    const requestData: WorkoutExerciseRequest = {
+      exerciseId: selectedExerciseId[0],
+      workoutId: workoutId,
       sets,
       reps,
     };
 
     try {
-      await addExerciseToWorkout(requestData);
-      const workoutExercises = await getAllWorkoutExercises(workoutID);
+      await workoutExercisesApi.postWorkoutExercise(requestData);
+      const workoutExercises = await workoutExercisesApi.listWorkoutExercises(
+        workoutId
+      );
       const updatedExercises = await Promise.all(
-        workoutExercises.map(async (workoutExercise) => {
-          const exercise = await getExercise(workoutExercise.exercise_id);
+        workoutExercises.data.map(async (workoutExercise) => {
+          const exercise = await exerciseApi.getExerciseById(
+            workoutExercise.exerciseId
+          );
           return {
             id: workoutExercise.id,
-            exerciseName: exercise.Name,
-            exerciseId: exercise.ID,
+            exerciseName: exercise.data.name,
+            exerciseId: exercise.data.id,
             sets: workoutExercise.sets,
             reps: workoutExercise.reps,
           };
@@ -126,25 +141,28 @@ const WorkoutPage: React.FC = () => {
   };
 
   const handleEdit = async (
-    workoutExerciseId: number,
-    exerciseId: number,
+    workoutExerciseId: string,
+    exerciseId: string,
     sets: number,
     reps: number
   ) => {
-    const requestData: AddExerciseRequest = {
-      exercise_id: Number(exerciseId),
-      workout_id: Number(workoutId),
+    const requestData: WorkoutExerciseRequest = {
+      exerciseId: exerciseId,
+      workoutId: workoutId,
       sets,
       reps,
     };
 
     try {
-      await patchWorkoutExercise(workoutExerciseId, requestData);
+      await workoutExercisesApi.patchWorkoutExercise(
+        workoutExerciseId,
+        requestData
+      );
     } catch (error) {}
   };
-  const handleDeleteWorkoutExercise = async (id: number) => {
+  const handleDeleteWorkoutExercise = async (id: string) => {
     try {
-      await deleteWorkoutExercise(id);
+      await workoutExercisesApi.deleteWorkoutExercise(id);
       toaster.create({
         title: "Removed exercise.",
         type: "success",
@@ -161,8 +179,10 @@ const WorkoutPage: React.FC = () => {
   };
 
   const handleNavigate = async () => {
-    const response = await createWorkoutSession({ workout_id: workoutID });
-    navigate(`/workout-session/${response.session_id}/edit`);
+    const response = await workoutSessionApi.addWorkoutSession({
+      workoutId: workoutId,
+    });
+    navigate(`/workout-session/${response.data.id}/edit`);
   };
   return (
     <Box p={5}>
@@ -183,7 +203,7 @@ const WorkoutPage: React.FC = () => {
               onDelete={() => handleDeleteWorkoutExercise(exercise.id)}
               exercises={exercisesSelect}
               onEdit={function (
-                exerciseId: number,
+                exerciseId: string,
                 reps: number,
                 sets: number
               ): void {

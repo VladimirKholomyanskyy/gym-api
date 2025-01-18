@@ -5,18 +5,18 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/VladimirKholomyanskyy/gym-api/internal/handlers"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/service"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/account"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
 	"github.com/coreos/go-oidc"
 )
 
 type KeycloakMiddleware struct {
 	verifier    *oidc.IDTokenVerifier
 	clientID    string
-	userService *service.UserService
+	userService *account.UserService
 }
 
-func NewKeycloakMiddleware(userService *service.UserService, issuer, clientID string) (*KeycloakMiddleware, error) {
+func NewKeycloakMiddleware(userService *account.UserService, issuer, clientID string) (*KeycloakMiddleware, error) {
 	// Create OIDC provider
 	provider, err := oidc.NewProvider(context.Background(), issuer)
 	if err != nil {
@@ -58,7 +58,7 @@ func (km *KeycloakMiddleware) Authenticate(next http.Handler) http.Handler {
 			km.userService.CreateUser(claims.Sub)
 		}
 
-		ctx := context.WithValue(r.Context(), handlers.UserIDKey, user.ID)
+		ctx := context.WithValue(r.Context(), common.UserIDKey, user.ID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

@@ -1,16 +1,17 @@
-import { LogExerciseResponse, WSWorkoutSessionResponse } from "@/types/api";
+import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
 import ExerciseLog, { ExerciseLogItem } from "./ExerciseLog";
 import { Button } from "./ui/button";
-import { createExerciseLog } from "@/api/exercise-logs";
-import { finishWorkoutSession } from "@/api/workout-sessions";
+
 import { Stack, Heading, Card, Flex } from "@chakra-ui/react";
 import { useState } from "react";
+import { WorkoutSessionsApi } from "@/api";
+import { apiConfig } from "@/api/apiConfig";
 
 const EditableWorkoutSession = ({
   session,
   logs,
 }: {
-  session: WSWorkoutSessionResponse;
+  session: WorkoutSessionResponse;
   logs: LogExerciseResponse[];
 }) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -20,7 +21,7 @@ const EditableWorkoutSession = ({
       return prevIndex < computedLogItems.length - 1 ? prevIndex + 1 : 0;
     });
   };
-
+  const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
   // Function to handle "Previous" button
   const handlePrevious = () => {
     setCurrentCardIndex((prevIndex) =>
@@ -30,23 +31,23 @@ const EditableWorkoutSession = ({
 
   const handleComplete = async () => {
     try {
-      await finishWorkoutSession(session.session_id);
+      await workoutSessionApi.finishWorkoutSession(session.id);
     } catch (error) {
       console.log(error);
     }
   };
   const handleLog = async (
-    exerciseId: number,
+    exerciseId: string,
     setNumber: number,
     repsCompleted: number,
     weightUsed: number
   ) => {
     try {
-      await createExerciseLog(session.session_id, {
-        exercise_id: exerciseId,
-        reps_completed: repsCompleted,
-        set_number: setNumber,
-        weight_used: weightUsed,
+      await workoutSessionApi.logExercise(session.id, {
+        exerciseId: exerciseId,
+        repsCompleted: repsCompleted,
+        setNumber: setNumber,
+        weightUsed: weightUsed,
       });
     } catch (error) {
       console.log(error);
@@ -54,37 +55,35 @@ const EditableWorkoutSession = ({
   };
 
   const computedLogItems =
-    session?.workout_snapshot?.Exercises.map((exercise) => {
+    session?.workoutSnapshot?.workoutExercises?.map((exercise) => {
       const exLogs: ExerciseLogItem[] = Array.from(
-        { length: exercise.Sets },
+        { length: exercise.sets },
         (_, index) => {
           const found = logs.find(
-            (e) =>
-              exercise.ExerciseID === e.exercise_id &&
-              e.set_number === index + 1
+            (e) => exercise.id === e.id && e.setNumber === index + 1
           );
           return {
             id: index + 1,
             prevReps: 3,
             prevWeight: 20,
-            reqReps: exercise.Reps,
-            currentReps: found?.reps_completed,
-            currentWeight: found?.weight_used,
+            reqReps: exercise.reps,
+            currentReps: found?.repsCompleted,
+            currentWeight: found?.weightUsed,
           };
         }
       );
 
       return {
-        exerciseId: exercise.ExerciseID,
-        exerciseName: exercise.Exercise.Name,
+        exerciseId: exercise.id,
+        exerciseName: exercise.exercise?.name,
         logs: exLogs,
       };
     }) || [];
   console.log("computedLogItems:", computedLogItems);
   return (
     <Stack>
-      <Heading size="4xl">{session?.workout_snapshot.Name}</Heading>
-      <Heading size="2xl">{session?.started_at}</Heading>
+      <Heading size="4xl">{session?.workoutSnapshot.name}</Heading>
+      <Heading size="2xl">{session?.startedAt}</Heading>
       <Button onClick={handleComplete}>Finish</Button>
       {computedLogItems.length > 0 &&
         computedLogItems[currentCardIndex]?.logs && (

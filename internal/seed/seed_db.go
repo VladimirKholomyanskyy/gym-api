@@ -5,22 +5,21 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/VladimirKholomyanskyy/gym-api/internal/models"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/repository"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/training"
 )
 
 type DatabaseSeed struct {
-	exerciseRepo        *repository.ExerciseRepository
-	workoutRepo         *repository.WorkoutRepository
-	trainingProgramRepo *repository.TrainingProgramRepository
-	workoutExerciseRepo *repository.WorkoutExerciseRepository
+	exerciseRepo        *training.ExerciseRepository
+	workoutRepo         *training.WorkoutRepository
+	trainingProgramRepo *training.TrainingProgramRepository
+	workoutExerciseRepo *training.WorkoutExerciseRepository
 }
 
 func NewDatabaseSeed(
-	exerciseRepo *repository.ExerciseRepository,
-	workoutRepo *repository.WorkoutRepository,
-	trainingProgramRepo *repository.TrainingProgramRepository,
-	workoutExerciseRepo *repository.WorkoutExerciseRepository,
+	exerciseRepo *training.ExerciseRepository,
+	workoutRepo *training.WorkoutRepository,
+	trainingProgramRepo *training.TrainingProgramRepository,
+	workoutExerciseRepo *training.WorkoutExerciseRepository,
 ) *DatabaseSeed {
 	return &DatabaseSeed{exerciseRepo: exerciseRepo, workoutRepo: workoutRepo, trainingProgramRepo: trainingProgramRepo, workoutExerciseRepo: workoutExerciseRepo}
 }
@@ -32,7 +31,7 @@ func (d *DatabaseSeed) Seed() {
 	}
 	if len(exercises) == 0 {
 		// Define exercises to populate
-		exercises := []models.Exercise{
+		exercises := []training.Exercise{
 			{Name: "Bench Press", PrimaryMuscle: "Chest", SecondaryMuscle: []string{"Triceps", "Shoulders"}, Equipment: "Barbell", Description: "A compound chest exercise."},
 			{Name: "Squat", PrimaryMuscle: "Legs", SecondaryMuscle: []string{"Glutes", "Lower Back"}, Equipment: "Barbell", Description: "A compound leg exercise."},
 			{Name: "Deadlift", PrimaryMuscle: "Back", SecondaryMuscle: []string{"Hamstrings", "Glutes"}, Equipment: "Barbell", Description: "A compound back and leg exercise."},
@@ -40,7 +39,7 @@ func (d *DatabaseSeed) Seed() {
 		}
 
 		// Insert exercises
-		var allExercises []models.Exercise
+		var allExercises []training.Exercise
 		for _, exercise := range exercises {
 			if err := d.exerciseRepo.Create(&exercise); err != nil {
 				log.Fatalf("Failed to seed exercises: %v", err)
@@ -50,13 +49,13 @@ func (d *DatabaseSeed) Seed() {
 
 		log.Println("Seeded exercises table with initial data.")
 		userID := uint(1)
-		programs := []models.TrainingProgram{
+		programs := []training.TrainingProgram{
 			{Name: "Muscle growth", Description: "High volume workouts", UserID: userID},
 			{Name: "Endurance", Description: "High reps count", UserID: userID},
 			{Name: "Strength", Description: "Increase overall strength", UserID: userID},
 			{Name: "Strength", Description: "Increase overall strength", UserID: userID},
 		}
-		var allPrograms []models.TrainingProgram
+		var allPrograms []training.TrainingProgram
 		for _, program := range programs {
 			d.trainingProgramRepo.Create(&program)
 			allPrograms = append(allPrograms, program)
@@ -64,9 +63,9 @@ func (d *DatabaseSeed) Seed() {
 
 		log.Println("Seeded training programs table with initial data.")
 
-		var allWorkouts []models.Workout
+		var allWorkouts []training.Workout
 		for _, program := range allPrograms {
-			workouts := []models.Workout{
+			workouts := []training.Workout{
 				{Name: "Workout 1", TrainingProgramID: program.ID},
 				{Name: "Workout 2", TrainingProgramID: program.ID},
 				{Name: "Workout 3", TrainingProgramID: program.ID},
@@ -85,7 +84,7 @@ func (d *DatabaseSeed) Seed() {
 		maxSets := 4
 		for _, workout := range allWorkouts {
 			for _, exercise := range allExercises {
-				d.workoutExerciseRepo.Create(&models.WorkoutExercise{
+				d.workoutExerciseRepo.Create(&training.WorkoutExercise{
 					WorkoutID:  workout.ID,
 					ExerciseID: exercise.ID,
 					Sets:       r.Intn(maxSets-minSets+1) + minSets,

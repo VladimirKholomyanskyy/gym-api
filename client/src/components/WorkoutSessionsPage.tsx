@@ -1,29 +1,32 @@
-import { getWorkoutSessions } from "@/api/workout-sessions";
 import { useState, useEffect } from "react";
 import WorkoutSessionCard, {
   WorkoutSessionCardProps,
 } from "./WorkoutSessionCard";
 import { For, Heading, Spinner, Stack } from "@chakra-ui/react";
+import { WorkoutSessionsApi } from "@/api";
+import { apiConfig } from "@/api/apiConfig";
 
 const WorkoutSessionsPage = () => {
   const [workoutSessionsCardProps, setWorkoutSessionsCardProps] = useState<
     WorkoutSessionCardProps[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
 
   useEffect(() => {
     const fetchWorkoutSessions = async () => {
       try {
-        const sessions = await getWorkoutSessions();
-        const sessionProps = sessions.map((session) => {
-          const shortDesc = session.workout_snapshot.Exercises.map(
-            (e) => e.Exercise.Name
-          ).join(",");
+        const sessions = await workoutSessionApi.listWorkoutSessions();
+        const sessionProps = sessions.data.map((session) => {
+          const shortDesc = session.workoutSnapshot.workoutExercises
+            ?.map((e) => e.exercise?.name)
+            .join(",");
           return {
-            workoutName: session.workout_snapshot.Name,
-            sessionStart: session.started_at,
-            sessionCompleted: session.completed_at,
-            shortDescription: shortDesc,
+            workoutSessionId: session.id,
+            workoutName: session.workoutSnapshot.name,
+            sessionStart: session.startedAt,
+            sessionCompleted: session.completedAt ? session.completedAt : "",
+            shortDescription: shortDesc ? shortDesc : "",
           };
         });
         setWorkoutSessionsCardProps(sessionProps);
@@ -45,6 +48,7 @@ const WorkoutSessionsPage = () => {
         {(item, index) => (
           <WorkoutSessionCard
             key={index}
+            workoutSessionId={item.workoutSessionId}
             workoutName={item.workoutName}
             sessionStart={item.sessionStart}
             shortDescription={item.shortDescription}

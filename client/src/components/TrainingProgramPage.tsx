@@ -9,14 +9,7 @@ import {
   HStack,
   Separator,
 } from "@chakra-ui/react";
-import { getExercise } from "../api/exercises";
-import {
-  getTrainingProgram,
-  updateTrainingProgram,
-} from "../api/trainingPrograms";
-import { createWorkout, deleteWorkout, getAllWorkouts } from "../api/workouts";
-import { getAllWorkoutExercises } from "../api/workout-exercises";
-import { TrainingProgram } from "../types/api";
+
 import { useNavigate, useParams } from "react-router";
 import WorkoutCard from "./WorkoutCard";
 import { Button } from "./ui/button";
@@ -33,9 +26,13 @@ import {
   DrawerTrigger,
 } from "./ui/drawer";
 import { toaster } from "./ui/toaster";
+import { TrainingProgramsApi } from "@/api/apis/training-programs-api";
+import { TrainingProgram } from "@/api/models/training-program";
+import { apiConfig } from "@/api/apiConfig";
+import { ExercisesApi, WorkoutExercisesApi, WorkoutsApi } from "@/api";
 
 interface WorkoutCardProps {
-  workoutId: number;
+  workoutId: string;
   name: string;
   exercises: string[];
 }
@@ -50,11 +47,14 @@ const TrainingProgramPage: React.FC = () => {
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const { programId } = useParams();
-  const programID = Number(programId);
   const navigate = useNavigate();
   const ref = useRef<HTMLInputElement>(null);
+  const trainingProgramApi = new TrainingProgramsApi(apiConfig);
+  const workoutApi = new WorkoutsApi(apiConfig);
+  const workoutExercisesApi = new WorkoutExercisesApi(apiConfig);
+  const exerciseApi = new ExercisesApi(apiConfig);
 
-  if (!programID) {
+  if (!programId) {
     navigate("/error");
     return null;
   }
@@ -63,22 +63,27 @@ const TrainingProgramPage: React.FC = () => {
     const fetchData = async () => {
       try {
         const [programData, workoutsData] = await Promise.all([
-          getTrainingProgram(programID),
-          getAllWorkouts(programID),
+          trainingProgramApi.getTrainingProgramById(programId),
+          workoutApi.listWorkoutsForProgram(programId),
         ]);
 
-        setProgram(programData);
-        setNewName(programData.name);
-        setNewDescription(programData.description);
+        setProgram(programData.data);
+        setNewName(programData.data.name);
+        setNewDescription(
+          programData.data.description ? programData.data.description : ""
+        );
 
         const workoutCards = await Promise.all(
-          workoutsData.map(async (workout) => {
-            const workoutExercises = await getAllWorkoutExercises(workout.id);
+          workoutsData.data.map(async (workout) => {
+            const workoutExercises =
+              await workoutExercisesApi.listWorkoutExercises(workout.id);
 
             const exerciseNames = await Promise.all(
-              workoutExercises.map(async (we) => {
-                const exercise = await getExercise(we.exercise_id);
-                return exercise.Name;
+              workoutExercises.data.map(async (we) => {
+                const exercise = await exerciseApi.getExerciseById(
+                  we.exerciseId
+                );
+                return exercise.data.name;
               })
             );
 
@@ -107,11 +112,13 @@ const TrainingProgramPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const created = await createWorkout(programID, { name: newWorkout.name });
+      const created = await workoutApi.addWorkoutToProgram(programId, {
+        name: newWorkout.name,
+      });
 
       setWorkoutExercisesCard((prev) => [
         ...prev,
-        { workoutId: created.id, name: created.name, exercises: [] },
+        { workoutId: created.data.id, name: created.data.name, exercises: [] },
       ]);
       setNewWorkout({ name: "" });
     } catch (error: any) {
@@ -122,9 +129,9 @@ const TrainingProgramPage: React.FC = () => {
   }, [programId, newWorkout.name]);
 
   const handleDeleteWorkout = useCallback(
-    async (workoutId: number) => {
+    async (workoutId: string) => {
       try {
-        await deleteWorkout(programID!, workoutId);
+        await workoutApi.deleteWorkout(programId!, workoutId);
         setWorkoutExercisesCard((prev) =>
           prev.filter((card) => card.workoutId !== workoutId)
         );
@@ -137,11 +144,14 @@ const TrainingProgramPage: React.FC = () => {
 
   const handleUpdateProgram = async () => {
     try {
-      const program = await updateTrainingProgram(programID, {
-        name: newName,
-        description: newDescription,
-      });
-      setProgram(program);
+      const program = await trainingProgramApi.updateTrainingProgram(
+        programId,
+        {
+          name: newName,
+          description: newDescription,
+        }
+      );
+      setProgram(program.data);
       toaster.create({
         title: "Training program updated.",
         type: "success",
@@ -249,7 +259,7 @@ const TrainingProgramPage: React.FC = () => {
             <WorkoutCard
               key={workout.workoutId}
               workoutId={workout.workoutId}
-              programId={programID}
+              programId={programId}
               onDelete={handleDeleteWorkout}
               name={workout.name}
               exercises={workout.exercises}

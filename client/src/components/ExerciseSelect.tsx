@@ -1,4 +1,4 @@
-import { Exercise } from "@/types/api";
+import { Exercise } from "@/api/models";
 import {
   SelectContent,
   SelectItem,
@@ -16,8 +16,8 @@ const ExerciseSelect: React.FC<{
 }> = ({ exercises, defaultExerciseId, contentRef, setSelectedExerciseId }) => {
   const collection = createListCollection({
     items: exercises,
-    itemToString: (item) => item.Name,
-    itemToValue: (item) => item.ID.toString(),
+    itemToString: (item) => item.name,
+    itemToValue: (item) => item.id.toString(),
   });
 
   console.log(defaultExerciseId);
@@ -34,8 +34,8 @@ const ExerciseSelect: React.FC<{
       </SelectTrigger>
       <SelectContent portalRef={contentRef}>
         {exercises.map((exercise) => (
-          <SelectItem key={exercise.ID} item={exercise}>
-            {exercise.Name}
+          <SelectItem key={exercise.id} item={exercise}>
+            {exercise.name}
           </SelectItem>
         ))}
       </SelectContent>

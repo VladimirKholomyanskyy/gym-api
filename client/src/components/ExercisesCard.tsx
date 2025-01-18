@@ -25,18 +25,18 @@ import {
 } from "./ui/drawer";
 import ExerciseSelect from "./ExerciseSelect";
 import { NumberInputField, NumberInputRoot } from "./ui/number-input";
-import { Exercise } from "@/types/api";
 import { useState } from "react";
+import { Exercise } from "@/api/models";
 
 export interface ExerciseCardProps {
-  exerciseId: number;
+  exerciseId: string;
   exercise: string;
   exercises: Exercise[];
   sets: number;
   reps: number;
   contentRef: React.RefObject<HTMLDivElement>;
   onDelete: () => void;
-  onEdit: (exerciseId: number, reps: number, sets: number) => void;
+  onEdit: (exerciseId: string, reps: number, sets: number) => void;
 }
 
 const ExerciseCard = ({
@@ -112,7 +112,7 @@ const ExerciseCard = ({
               <Button
                 colorScheme="teal"
                 onClick={() =>
-                  onEdit(Number(selectedExerciseId), repsLocal, setsLocal)
+                  onEdit(selectedExerciseId[0], repsLocal, setsLocal)
                 }
               >
                 Save
