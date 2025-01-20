@@ -65,7 +65,7 @@ const ExerciseLog = ({ items, onLog }: ExerciseLogProps) => {
       </Table.Header>
       <Table.Body>
         {items.map((item, index) => (
-          <Table.Row key={item.id}>
+          <Table.Row key={item.id} bg="bg.subtle">
             <Table.Cell>{item.id}</Table.Cell>
             <Table.Cell>{item.prevReps + "x" + item.prevWeight}</Table.Cell>
             <Table.Cell>

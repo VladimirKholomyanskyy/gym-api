@@ -36,6 +36,14 @@ func (h *WorkoutProgressHandler) GetWorkoutSession(ctx context.Context, workoutS
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, nil), nil
 	}
+	if session.CompletedAt != nil {
+		return openapi.Response(http.StatusOK, openapi.WorkoutSessionResponse{
+			Id:              fmt.Sprintf("%d", session.ID),
+			StartedAt:       session.StartedAt,
+			CompletedAt:     session.CompletedAt,
+			WorkoutSnapshot: *snapshot,
+		}), nil
+	}
 	return openapi.Response(http.StatusOK, openapi.WorkoutSessionResponse{
 		Id:              fmt.Sprintf("%d", session.ID),
 		StartedAt:       session.StartedAt,
@@ -56,11 +64,20 @@ func (h *WorkoutProgressHandler) ListWorkoutSessions(ctx context.Context) (opena
 		if err != nil {
 			return openapi.Response(http.StatusInternalServerError, nil), nil
 		}
-		convertedSessions = append(convertedSessions, openapi.WorkoutSessionResponse{
-			Id:              fmt.Sprintf("%d", session.ID),
-			StartedAt:       session.StartedAt,
-			WorkoutSnapshot: *snapshot,
-		})
+		if session.CompletedAt != nil {
+			convertedSessions = append(convertedSessions, openapi.WorkoutSessionResponse{
+				Id:              fmt.Sprintf("%d", session.ID),
+				StartedAt:       session.StartedAt,
+				CompletedAt:     session.CompletedAt,
+				WorkoutSnapshot: *snapshot,
+			})
+		} else {
+			convertedSessions = append(convertedSessions, openapi.WorkoutSessionResponse{
+				Id:              fmt.Sprintf("%d", session.ID),
+				StartedAt:       session.StartedAt,
+				WorkoutSnapshot: *snapshot,
+			})
+		}
 
 	}
 	return openapi.Response(http.StatusOK, convertedSessions), nil

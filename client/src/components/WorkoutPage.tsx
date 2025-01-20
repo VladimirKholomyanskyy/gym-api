@@ -36,6 +36,7 @@ import {
   WorkoutSessionsApi,
 } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
+import ConfirmationDialog from "./common/ConfirmationDialog";
 
 interface ExerciseCardProps {
   id: string;
@@ -182,12 +183,22 @@ const WorkoutPage: React.FC = () => {
     const response = await workoutSessionApi.addWorkoutSession({
       workoutId: workoutId,
     });
-    navigate(`/workout-session/${response.data.id}/edit`);
+    navigate(`/workout-sessions/${response.data.id}/edit`);
   };
   return (
-    <Box p={5}>
-      <VStack gap={6} align="stretch">
-        <Heading size="4xl">{workout?.name}</Heading>
+    <Box>
+      <Box mb={7} mt={7}>
+        <Heading size="2xl" fontWeight="bold" textAlign="center">
+          {workout?.name}
+        </Heading>
+      </Box>
+      <VStack
+        gap={6}
+        align="stretch"
+        width="100%"
+        paddingLeft="8"
+        paddingRight="8"
+      >
         {loading ? (
           <Flex justifyContent="center" alignItems="center" height="50vh">
             <Spinner />
@@ -213,56 +224,64 @@ const WorkoutPage: React.FC = () => {
             />
           ))
         )}
+        <Flex gap="4">
+          <DrawerRoot placement="bottom">
+            <DrawerBackdrop />
+            <DrawerTrigger asChild>
+              <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
+                Add Exercise
+              </Button>
+            </DrawerTrigger>
+            <ConfirmationDialog
+              triggerLabel="Start Workout"
+              triggerIcon={null}
+              deleteLabel="Yes"
+              cancelLabel="No"
+              message={"Are you sure wnat to start workout"}
+              onDelete={handleNavigate}
+            />
+            <DrawerContent ref={contentRef}>
+              <DrawerCloseTrigger />
+              <DrawerHeader>Add a New Exercise</DrawerHeader>
+
+              <DrawerBody>
+                <VStack gap={4}>
+                  <ExerciseSelect
+                    exercises={exercisesSelect}
+                    contentRef={contentRef}
+                    setSelectedExerciseId={setSelectedExerciseId}
+                    defaultExerciseId={""}
+                  />
+                  <NumberInputRoot
+                    defaultValue="3"
+                    min={1}
+                    onValueChange={(e) => setSets(e.valueAsNumber)}
+                  >
+                    <NumberInputField placeholder="Number of Sets" />
+                  </NumberInputRoot>
+
+                  <NumberInputRoot
+                    defaultValue="10"
+                    min={1}
+                    onValueChange={(e) => setReps(e.valueAsNumber)}
+                  >
+                    <NumberInputField placeholder="Number of Reps" />
+                  </NumberInputRoot>
+                </VStack>
+              </DrawerBody>
+
+              <DrawerFooter>
+                <DrawerActionTrigger asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DrawerActionTrigger>
+                <Button colorScheme="teal" onClick={handleSubmit}>
+                  Save
+                </Button>
+              </DrawerFooter>
+            </DrawerContent>
+          </DrawerRoot>
+        </Flex>
       </VStack>
-      {/* Drawer */}
-      <DrawerRoot placement="bottom">
-        <DrawerBackdrop />
-        <DrawerTrigger asChild>
-          <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
-            Add Exercise
-          </Button>
-        </DrawerTrigger>
-        <Button onClick={handleNavigate}>Start Workout</Button>
-        <DrawerContent ref={contentRef}>
-          <DrawerCloseTrigger />
-          <DrawerHeader>Add a New Exercise</DrawerHeader>
-
-          <DrawerBody>
-            <VStack gap={4}>
-              <ExerciseSelect
-                exercises={exercisesSelect}
-                contentRef={contentRef}
-                setSelectedExerciseId={setSelectedExerciseId}
-                defaultExerciseId={""}
-              />
-              <NumberInputRoot
-                defaultValue="3"
-                min={1}
-                onValueChange={(e) => setSets(e.valueAsNumber)}
-              >
-                <NumberInputField placeholder="Number of Sets" />
-              </NumberInputRoot>
-
-              <NumberInputRoot
-                defaultValue="10"
-                min={1}
-                onValueChange={(e) => setReps(e.valueAsNumber)}
-              >
-                <NumberInputField placeholder="Number of Reps" />
-              </NumberInputRoot>
-            </VStack>
-          </DrawerBody>
-
-          <DrawerFooter>
-            <DrawerActionTrigger asChild>
-              <Button variant="outline">Cancel</Button>
-            </DrawerActionTrigger>
-            <Button colorScheme="teal" onClick={handleSubmit}>
-              Save
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </DrawerRoot>
     </Box>
   );
 };

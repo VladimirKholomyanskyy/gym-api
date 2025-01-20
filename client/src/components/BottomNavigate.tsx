@@ -6,12 +6,12 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   return (
-    <Flex gap="4" justify="center">
+    <Flex gap="4" justify="center" padding="2" background="bg.subtle">
       <IconButton
         aria-label="Home"
         onClick={() => navigate("/home")}
         variant="ghost"
-        color="white"
+        color="pink.600"
       >
         <FaHome />
       </IconButton>
@@ -19,7 +19,7 @@ const BottomNav = () => {
         aria-label="Training Programs"
         onClick={() => navigate("/training-programs")}
         variant="ghost"
-        color="white"
+        color="pink.600"
       >
         <FaClipboardList />
       </IconButton>
@@ -27,7 +27,7 @@ const BottomNav = () => {
         aria-label="Workouts"
         onClick={() => navigate("/workout-sessions")}
         variant="ghost"
-        color="white"
+        color="pink.600"
       >
         <FaDumbbell />
       </IconButton>
@@ -35,7 +35,7 @@ const BottomNav = () => {
         aria-label="Profile"
         onClick={() => navigate("/profile")}
         variant="ghost"
-        color="white"
+        color="pink.600"
       >
         <FaUser />
       </IconButton>

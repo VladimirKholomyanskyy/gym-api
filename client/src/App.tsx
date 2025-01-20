@@ -53,7 +53,12 @@ function App() {
 
   return (
     <Router>
-      <Flex direction="column" height="100vh" pb="60px">
+      <Flex
+        direction="column"
+        height="100vh"
+        className="dark"
+        background="bg.subtle"
+      >
         <Box flex="1" overflowY="auto">
           <Routes>
             <Route path="/" element={<AuthPage />} />

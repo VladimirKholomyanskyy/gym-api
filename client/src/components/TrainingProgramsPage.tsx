@@ -1,11 +1,11 @@
 import {
   Box,
-  Text,
   Flex,
   Input,
   Spinner,
   VStack,
   useDisclosure,
+  Heading,
 } from "@chakra-ui/react";
 import { toaster } from "@/components/ui/toaster";
 import { Button } from "./ui/button";
@@ -141,18 +141,25 @@ const TrainingProgramsPage: React.FC = () => {
   };
 
   return (
-    <Box p={4} width="100%">
-      <Text fontSize="2xl" fontWeight="bold" textAlign="center" mb={6}>
-        Training Programs
-      </Text>
-
+    <Box width="100%">
+      <Box mb={7} mt={7}>
+        <Heading size="2xl" fontWeight="bold" textAlign="center">
+          Training Programs
+        </Heading>
+      </Box>
       {loading ? (
         <Flex justifyContent="center" alignItems="center" height="50vh">
           <Spinner size="xl" />
         </Flex>
       ) : (
         <>
-          <VStack gap={6} align="stretch" width="100%">
+          <VStack
+            gap={6}
+            align="stretch"
+            width="100%"
+            paddingLeft="8"
+            paddingRight="8"
+          >
             {programs.map((program) => (
               <TrainingProgramCard
                 key={program.id}

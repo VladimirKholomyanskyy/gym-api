@@ -1,14 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Box,
-  VStack,
-  Heading,
-  Flex,
-  Spinner,
-  Input,
-  HStack,
-  Separator,
-} from "@chakra-ui/react";
+import { Box, VStack, Heading, Flex, Spinner, Input } from "@chakra-ui/react";
 
 import { useNavigate, useParams } from "react-router";
 import WorkoutCard from "./WorkoutCard";
@@ -167,12 +158,37 @@ const TrainingProgramPage: React.FC = () => {
     }
   };
   return (
-    <Box p={5}>
-      <VStack gap={4} minHeight="100%" align="stretch">
-        <Heading size="4xl">{program?.name}</Heading>
-        <Heading size="2xl">{program?.description}</Heading>
-        <Separator />
-        <HStack>
+    <Box>
+      <Box mb={7} mt={7}>
+        <Heading size="2xl" fontWeight="bold" textAlign="center">
+          {program?.name}
+        </Heading>
+        <Heading size="lg">{program?.description}</Heading>
+      </Box>
+      <VStack
+        gap={6}
+        align="stretch"
+        width="100%"
+        paddingLeft="8"
+        paddingRight="8"
+      >
+        {loading ? (
+          <Flex justifyContent="center" alignItems="center" height="100%">
+            <Spinner />
+          </Flex>
+        ) : (
+          workoutExerciseCard.map((workout) => (
+            <WorkoutCard
+              key={workout.workoutId}
+              workoutId={workout.workoutId}
+              programId={programId}
+              onDelete={handleDeleteWorkout}
+              name={workout.name}
+              exercises={workout.exercises}
+            />
+          ))
+        )}
+        <Flex gap="4">
           <DrawerRoot placement="bottom">
             <DrawerBackdrop />
             <DrawerTrigger asChild>
@@ -183,7 +199,6 @@ const TrainingProgramPage: React.FC = () => {
             <DrawerContent ref={ref}>
               <DrawerCloseTrigger />
               <DrawerHeader>Add a New Workout</DrawerHeader>
-
               <DrawerBody>
                 <VStack gap={4}>
                   <Field label="Name">
@@ -196,7 +211,6 @@ const TrainingProgramPage: React.FC = () => {
                   </Field>
                 </VStack>
               </DrawerBody>
-
               <DrawerFooter>
                 <DrawerActionTrigger asChild>
                   <Button variant="outline">Cancel</Button>
@@ -217,7 +231,6 @@ const TrainingProgramPage: React.FC = () => {
             <DrawerContent ref={ref}>
               <DrawerCloseTrigger />
               <DrawerHeader>Edit Training Program</DrawerHeader>
-
               <DrawerBody>
                 <VStack gap={4}>
                   <Field label="Name">
@@ -238,7 +251,6 @@ const TrainingProgramPage: React.FC = () => {
                   </Field>
                 </VStack>
               </DrawerBody>
-
               <DrawerFooter>
                 <DrawerActionTrigger asChild>
                   <Button variant="outline">Cancel</Button>
@@ -249,23 +261,7 @@ const TrainingProgramPage: React.FC = () => {
               </DrawerFooter>
             </DrawerContent>
           </DrawerRoot>
-        </HStack>
-        {loading ? (
-          <Flex justifyContent="center" alignItems="center" height="100%">
-            <Spinner />
-          </Flex>
-        ) : (
-          workoutExerciseCard.map((workout) => (
-            <WorkoutCard
-              key={workout.workoutId}
-              workoutId={workout.workoutId}
-              programId={programId}
-              onDelete={handleDeleteWorkout}
-              name={workout.name}
-              exercises={workout.exercises}
-            />
-          ))
-        )}
+        </Flex>
       </VStack>
     </Box>
   );

@@ -2,10 +2,20 @@ import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
 import ExerciseLog, { ExerciseLogItem } from "./ExerciseLog";
 import { Button } from "./ui/button";
 
-import { Stack, Heading, Card, Flex } from "@chakra-ui/react";
+import {
+  Stack,
+  Heading,
+  Card,
+  Flex,
+  Box,
+  VStack,
+  IconButton,
+} from "@chakra-ui/react";
 import { useState } from "react";
 import { WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
+import { formatDateTime } from "@/utils/dateUtils";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 
 const EditableWorkoutSession = ({
   session,
@@ -59,7 +69,7 @@ const EditableWorkoutSession = ({
       const exLogs: ExerciseLogItem[] = Array.from(
         { length: exercise.sets },
         (_, index) => {
-          const found = logs.find(
+          const found = logs?.find(
             (e) => exercise.id === e.id && e.setNumber === index + 1
           );
           return {
@@ -82,49 +92,55 @@ const EditableWorkoutSession = ({
   console.log("computedLogItems:", computedLogItems);
   return (
     <Stack>
-      <Heading size="4xl">{session?.workoutSnapshot.name}</Heading>
-      <Heading size="2xl">{session?.startedAt}</Heading>
-      <Button onClick={handleComplete}>Finish</Button>
-      {computedLogItems.length > 0 &&
-        computedLogItems[currentCardIndex]?.logs && (
-          <Card.Root>
-            <Card.Header>
-              <Card.Title>
-                {computedLogItems[currentCardIndex].exerciseName}
-              </Card.Title>
-              <Flex justify="space-between" w="300px">
-                <Button onClick={handlePrevious} colorScheme="blue">
-                  Previous
-                </Button>
-                <Button onClick={handleNext} colorScheme="blue">
-                  Next
-                </Button>
-              </Flex>
-            </Card.Header>
-            <Card.Body>
-              <ExerciseLog
-                key={currentCardIndex}
-                items={computedLogItems[currentCardIndex].logs}
-                onLog={function (
-                  setNumber: number,
-                  repsCompleted: number,
-                  weightUsed: number
-                ): void {
-                  handleLog(
-                    computedLogItems[currentCardIndex].exerciseId,
-                    setNumber,
-                    repsCompleted,
-                    weightUsed
-                  );
-                }}
-              />
-            </Card.Body>
-            <Card.Footer></Card.Footer>
-          </Card.Root>
-        )}
-      <Flex gap="4" justify="flex-start">
-        <Button>Add Note</Button>
-      </Flex>
+      <Box mb={7} mt={7}>
+        <Heading size="2xl" fontWeight="bold" textAlign="center">
+          {session?.workoutSnapshot.name}
+        </Heading>
+        <Heading size="lg">{formatDateTime(session?.startedAt)}</Heading>
+      </Box>
+      <VStack align="stretch" width="100%" paddingLeft="8" paddingRight="8">
+        {computedLogItems.length > 0 &&
+          computedLogItems[currentCardIndex]?.logs && (
+            <Card.Root>
+              <Card.Header>
+                <Flex justify="space-between">
+                  <IconButton onClick={handlePrevious}>
+                    <FaChevronLeft />
+                  </IconButton>
+                  <Card.Title>
+                    {computedLogItems[currentCardIndex].exerciseName}
+                  </Card.Title>
+                  <IconButton onClick={handleNext}>
+                    <FaChevronRight />
+                  </IconButton>
+                </Flex>
+              </Card.Header>
+              <Card.Body>
+                <ExerciseLog
+                  key={currentCardIndex}
+                  items={computedLogItems[currentCardIndex].logs}
+                  onLog={function (
+                    setNumber: number,
+                    repsCompleted: number,
+                    weightUsed: number
+                  ): void {
+                    handleLog(
+                      computedLogItems[currentCardIndex].exerciseId,
+                      setNumber,
+                      repsCompleted,
+                      weightUsed
+                    );
+                  }}
+                />
+              </Card.Body>
+              <Card.Footer></Card.Footer>
+            </Card.Root>
+          )}
+        <Flex gap="4" justify="space-between">
+          <Button>Add Note</Button>
+          <Button onClick={handleComplete}>Finish</Button>
+        </Flex>
+      </VStack>
     </Stack>
   );
 };

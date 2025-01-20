@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import WorkoutSessionCard, {
   WorkoutSessionCardProps,
 } from "./WorkoutSessionCard";
-import { For, Heading, Spinner, Stack } from "@chakra-ui/react";
+import { Box, For, Heading, Spinner, Stack, VStack } from "@chakra-ui/react";
 import { WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
 
@@ -43,19 +43,31 @@ const WorkoutSessionsPage = () => {
   if (loading) return <Spinner>Loading...</Spinner>;
   return (
     <Stack>
-      <Heading>Workout Sessions</Heading>
-      <For each={workoutSessionsCardProps}>
-        {(item, index) => (
-          <WorkoutSessionCard
-            key={index}
-            workoutSessionId={item.workoutSessionId}
-            workoutName={item.workoutName}
-            sessionStart={item.sessionStart}
-            shortDescription={item.shortDescription}
-            sessionCompleted={item.sessionCompleted}
-          />
-        )}
-      </For>
+      <Box mb={7} mt={7}>
+        <Heading size="2xl" fontWeight="bold" textAlign="center">
+          Workout Sessions
+        </Heading>
+      </Box>
+      <VStack
+        gap={6}
+        align="stretch"
+        width="100%"
+        paddingLeft="8"
+        paddingRight="8"
+      >
+        <For each={workoutSessionsCardProps}>
+          {(item, index) => (
+            <WorkoutSessionCard
+              key={index}
+              workoutSessionId={item.workoutSessionId}
+              workoutName={item.workoutName}
+              sessionStart={item.sessionStart}
+              shortDescription={item.shortDescription}
+              sessionCompleted={item.sessionCompleted}
+            />
+          )}
+        </For>
+      </VStack>
     </Stack>
   );
 };

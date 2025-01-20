@@ -1,10 +1,13 @@
-import { Provider } from "@/components/ui/provider";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { AuthProvider } from "react-oidc-context";
 import { User, WebStorageStateStore } from "oidc-client-ts";
+import { system } from "./theme.ts";
+import { ChakraProvider } from "@chakra-ui/react";
+import "@fontsource/audiowide/index.css";
+import { ColorModeProvider } from "./components/ui/color-mode.tsx";
 
 const oidcConfig = {
   authority: "http://localhost:8070/realms/gainz",
@@ -24,9 +27,11 @@ const oidcConfig = {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider {...oidcConfig}>
-      <Provider>
-        <App />
-      </Provider>
+      <ChakraProvider value={system}>
+        <ColorModeProvider forcedTheme="dark">
+          <App />
+        </ColorModeProvider>
+      </ChakraProvider>
     </AuthProvider>
   </StrictMode>
 );

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/dateUtils";
 import { Card, LinkBox, LinkOverlay, Stack, Text } from "@chakra-ui/react";
 import { Link } from "react-router";
 
@@ -8,6 +9,7 @@ export interface WorkoutSessionCardProps {
   sessionCompleted?: string;
   shortDescription?: string;
 }
+
 const WorkoutSessionCard = ({
   workoutSessionId,
   workoutName,
@@ -17,7 +19,7 @@ const WorkoutSessionCard = ({
 }: WorkoutSessionCardProps) => {
   return (
     <LinkBox>
-      <Card.Root size="sm">
+      <Card.Root size="sm" borderRadius="none">
         <Card.Header>
           <LinkOverlay asChild>
             <Link
@@ -39,8 +41,10 @@ const WorkoutSessionCard = ({
           alignItems="center"
         >
           <Stack>
-            <Text>Started: {sessionStart}</Text>
-            {sessionCompleted && <Text>Completed: {sessionCompleted}</Text>}
+            <Text>Started: {formatDateTime(sessionStart)}</Text>
+            {sessionCompleted && (
+              <Text>Completed: {formatDateTime(sessionCompleted)}</Text>
+            )}
           </Stack>
         </Card.Footer>
       </Card.Root>

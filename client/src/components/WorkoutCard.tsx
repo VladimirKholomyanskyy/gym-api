@@ -1,18 +1,18 @@
-import { Card, IconButton, Stack, Box } from "@chakra-ui/react";
-import { Button } from "./ui/button";
-import { FaTrash } from "react-icons/fa";
-import {
-  DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogRoot,
-} from "./ui/dialog";
+import { Card, IconButton, Stack, Box, Flex } from "@chakra-ui/react";
+import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router";
+import {
+  DrawerBackdrop,
+  DrawerBody,
+  DrawerCloseTrigger,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerRoot,
+  DrawerTrigger,
+} from "./ui/drawer";
+import { FaEllipsisVertical } from "react-icons/fa6";
+import ConfirmationDialog from "./common/ConfirmationDialog";
 
 export interface WorkoutCardProps {
   workoutId: string;
@@ -42,57 +42,58 @@ const WorkoutCard = ({
   const joinedExercises = exercises.join(", ");
 
   return (
-    <Card.Root size="sm">
-      <Card.Body>
-        <Stack gap="4">
-          <Box>
-            <Card.Title onClick={handleNavigate} cursor="pointer">
-              {name}
-            </Card.Title>
-            {joinedExercises && (
-              <Card.Description>{joinedExercises}</Card.Description>
-            )}
-          </Box>
-        </Stack>
-      </Card.Body>
-      <Card.Footer
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <Button colorScheme="blue" onClick={handleNavigate}>
-          View Exercises
-        </Button>
-        <DialogRoot role="alertdialog">
-          <DialogTrigger asChild>
-            <IconButton colorScheme="red" aria-label="Delete Workout">
-              <FaTrash />
-            </IconButton>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you sure?</DialogTitle>
-            </DialogHeader>
-            <DialogBody>
-              <p>
-                This action cannot be undone. This will permanently delete this
-                workout and its data.
-              </p>
-            </DialogBody>
-            <DialogFooter>
-              <DialogActionTrigger asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogActionTrigger>
-              <DialogActionTrigger asChild>
-                <Button colorScheme="red" onClick={handleDelete}>
-                  Delete
-                </Button>
-              </DialogActionTrigger>
-            </DialogFooter>
-            <DialogCloseTrigger />
-          </DialogContent>
-        </DialogRoot>
-      </Card.Footer>
+    <Card.Root size="sm" width="100%" background="bg.error" borderRadius="none">
+      <Flex align="stretch">
+        <Card.Body>
+          <Stack gap="4">
+            <Box>
+              <Card.Title onClick={handleNavigate} cursor="pointer">
+                {name}
+              </Card.Title>
+              {joinedExercises && (
+                <Card.Description>{joinedExercises}</Card.Description>
+              )}
+            </Box>
+          </Stack>
+        </Card.Body>
+        <Card.Footer
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+        ></Card.Footer>
+        <Box>
+          <DrawerRoot placement="bottom">
+            <DrawerBackdrop />
+            <DrawerTrigger asChild>
+              <IconButton height="100%" borderRadius="none">
+                <FaEllipsisVertical />
+              </IconButton>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerCloseTrigger />
+              <DrawerHeader>Add a New Training Program</DrawerHeader>
+              <DrawerBody bg="bg.subtle">
+                <Stack align="flex-start">
+                  <ConfirmationDialog
+                    message={
+                      "This action cannot be undone. This will permanently delete your workout."
+                    }
+                    onDelete={handleDelete}
+                  />
+                  <IconButton
+                    colorScheme="red"
+                    aria-label="Delete Program"
+                    onClick={handleNavigate}
+                  >
+                    <FaEdit /> Edit
+                  </IconButton>
+                </Stack>
+              </DrawerBody>
+              <DrawerFooter></DrawerFooter>
+            </DrawerContent>
+          </DrawerRoot>
+        </Box>
+      </Flex>
     </Card.Root>
   );
 };

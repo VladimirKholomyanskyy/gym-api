@@ -1,24 +1,24 @@
-import { Card, IconButton, Stack } from "@chakra-ui/react";
+import { Box, Card, Flex, IconButton, Stack } from "@chakra-ui/react";
 import { useNavigate } from "react-router";
-import { Button } from "./ui/button";
-import { FaTrash } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
+import { FaEllipsisVertical } from "react-icons/fa6";
 import {
-  DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
+  DrawerBackdrop,
+  DrawerBody,
+  DrawerCloseTrigger,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerRoot,
+  DrawerTrigger,
+} from "./ui/drawer";
+import ConfirmationDialog from "./common/ConfirmationDialog";
 
 interface TrainingProgramCardProps {
-  id: string; // or number, depending on your program's ID type
+  id: string;
   name: string;
   description?: string;
-  onDelete: (id: string) => void; // or number, depending on your ID type
+  onDelete: (id: string) => void;
   onUpdate: (id: string, newName: string, newDescription: string) => void;
 }
 
@@ -35,58 +35,59 @@ const TrainingProgramCard = ({
   };
 
   const handleDelete = () => {
-    onDelete(id); // Call the parent function to delete the program
+    onDelete(id);
   };
 
   return (
-    <Card.Root size="sm" width="100%">
-      <Card.Body>
-        <Stack gap="4">
-          <Card.Title
-            mt="2"
-            onClick={handleNavigate}
-            cursor="pointer"
-            _hover={{ color: "blue.500" }}
-          >
-            {name}
-          </Card.Title>
-          {description && <Card.Description>{description}</Card.Description>}
-        </Stack>
-      </Card.Body>
-      <Card.Footer display="flex" justifyContent="space-between">
-        <Button colorScheme="blue" onClick={handleNavigate}>
-          View Workouts
-        </Button>
-        <DialogRoot role="alertdialog">
-          <DialogTrigger asChild>
-            <IconButton colorScheme="red" aria-label="Delete Program">
-              <FaTrash />
-            </IconButton>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you sure?</DialogTitle>
-            </DialogHeader>
-            <DialogBody>
-              <p>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our systems.
-              </p>
-            </DialogBody>
-            <DialogFooter>
-              <DialogActionTrigger asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogActionTrigger>
-              <DialogActionTrigger asChild>
-                <Button colorPalette="red" onClick={handleDelete}>
-                  Delete
-                </Button>
-              </DialogActionTrigger>
-            </DialogFooter>
-            <DialogCloseTrigger />
-          </DialogContent>
-        </DialogRoot>
-      </Card.Footer>
+    <Card.Root size="sm" width="100%" background="bg.error" borderRadius="none">
+      <Flex align="stretch">
+        <Card.Body>
+          <Stack gap="4">
+            <Card.Title
+              mt="2"
+              onClick={handleNavigate}
+              cursor="pointer"
+              _hover={{ color: "blue.500" }}
+            >
+              {name}
+            </Card.Title>
+            {description && <Card.Description>{description}</Card.Description>}
+          </Stack>
+        </Card.Body>
+        <Card.Footer />
+        <Box>
+          <DrawerRoot placement="bottom">
+            <DrawerBackdrop />
+            <DrawerTrigger asChild>
+              <IconButton height="100%" borderRadius="none">
+                <FaEllipsisVertical />
+              </IconButton>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerCloseTrigger />
+              <DrawerHeader>Add a New Training Program</DrawerHeader>
+              <DrawerBody bg="bg.subtle">
+                <Stack align="flex-start">
+                  <ConfirmationDialog
+                    message={
+                      "This action cannot be undone. This will permanently delete your training program."
+                    }
+                    onDelete={handleDelete}
+                  />
+                  <IconButton
+                    colorScheme="red"
+                    aria-label="Delete Program"
+                    onClick={handleNavigate}
+                  >
+                    <FaEdit /> Edit
+                  </IconButton>
+                </Stack>
+              </DrawerBody>
+              <DrawerFooter></DrawerFooter>
+            </DrawerContent>
+          </DrawerRoot>
+        </Box>
+      </Flex>
     </Card.Root>
   );
 };
