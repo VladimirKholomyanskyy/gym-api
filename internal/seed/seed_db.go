@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/VladimirKholomyanskyy/gym-api/internal/account"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/training"
 )
 
@@ -13,6 +14,7 @@ type DatabaseSeed struct {
 	workoutRepo         *training.WorkoutRepository
 	trainingProgramRepo *training.TrainingProgramRepository
 	workoutExerciseRepo *training.WorkoutExerciseRepository
+	userRepository      *account.UserRepository
 }
 
 func NewDatabaseSeed(
@@ -20,8 +22,9 @@ func NewDatabaseSeed(
 	workoutRepo *training.WorkoutRepository,
 	trainingProgramRepo *training.TrainingProgramRepository,
 	workoutExerciseRepo *training.WorkoutExerciseRepository,
+	userRepository *account.UserRepository,
 ) *DatabaseSeed {
-	return &DatabaseSeed{exerciseRepo: exerciseRepo, workoutRepo: workoutRepo, trainingProgramRepo: trainingProgramRepo, workoutExerciseRepo: workoutExerciseRepo}
+	return &DatabaseSeed{exerciseRepo: exerciseRepo, workoutRepo: workoutRepo, trainingProgramRepo: trainingProgramRepo, workoutExerciseRepo: workoutExerciseRepo, userRepository: userRepository}
 }
 
 func (d *DatabaseSeed) Seed() {
@@ -30,6 +33,8 @@ func (d *DatabaseSeed) Seed() {
 		log.Fatalf("Failed to count exercises: %v", err)
 	}
 	if len(exercises) == 0 {
+		user := account.User{ExternalID: "a5ce12b2-3d4d-439c-ac8d-cd5ca5d8ea33"}
+		d.userRepository.CreateUser(&user)
 		// Define exercises to populate
 		exercises := []training.Exercise{
 			{Name: "Bench Press", PrimaryMuscle: "Chest", SecondaryMuscle: []string{"Triceps", "Shoulders"}, Equipment: "Barbell", Description: "A compound chest exercise."},
@@ -48,7 +53,7 @@ func (d *DatabaseSeed) Seed() {
 		}
 
 		log.Println("Seeded exercises table with initial data.")
-		userID := uint(1)
+		userID := user.ID
 		programs := []training.TrainingProgram{
 			{Name: "Muscle growth", Description: "High volume workouts", UserID: userID},
 			{Name: "Endurance", Description: "High reps count", UserID: userID},

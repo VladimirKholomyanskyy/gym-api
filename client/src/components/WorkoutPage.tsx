@@ -2,9 +2,11 @@ import {
   Box,
   Flex,
   Heading,
-  NumberInputRoot,
   Spinner,
+  Stack,
   VStack,
+  Text,
+  NumberInputRoot,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -36,7 +38,18 @@ import {
   WorkoutSessionsApi,
 } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
-import ConfirmationDialog from "./common/ConfirmationDialog";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Field } from "./ui/field";
 
 interface ExerciseCardProps {
   id: string;
@@ -186,22 +199,21 @@ const WorkoutPage: React.FC = () => {
     navigate(`/workout-sessions/${response.data.id}/edit`);
   };
   return (
-    <Box>
-      <Box mb={7} mt={7}>
-        <Heading size="2xl" fontWeight="bold" textAlign="center">
-          {workout?.name}
-        </Heading>
-      </Box>
-      <VStack
-        gap={6}
-        align="stretch"
-        width="100%"
-        paddingLeft="8"
-        paddingRight="8"
+    <Box width="100%" minHeight="100vh" background="bg.subtle" p={6}>
+      <Heading
+        size="2xl"
+        fontWeight="bold"
+        textAlign="center"
+        color="magenta.400"
+        textShadow="0 0 10px rgba(255, 0, 255, 0.8)"
       >
+        {workout?.name}
+      </Heading>
+
+      <VStack gap={6} align="stretch" width="100%" p={4}>
         {loading ? (
           <Flex justifyContent="center" alignItems="center" height="50vh">
-            <Spinner />
+            <Spinner size="xl" color="magenta.400" />
           </Flex>
         ) : (
           exercises.map((exercise) => (
@@ -224,26 +236,91 @@ const WorkoutPage: React.FC = () => {
             />
           ))
         )}
-        <Flex gap="4">
+        <Flex justifyContent="space-between">
           <DrawerRoot placement="bottom">
             <DrawerBackdrop />
             <DrawerTrigger asChild>
-              <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
-                Add Exercise
+              <Button
+                background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+                color="white"
+                _hover={{
+                  filter: "brightness(1.2)",
+                  boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+                }}
+                size="lg"
+              >
+                + Add Exercise
               </Button>
             </DrawerTrigger>
-            <ConfirmationDialog
-              triggerLabel="Start Workout"
-              triggerIcon={null}
-              deleteLabel="Yes"
-              cancelLabel="No"
-              message={"Are you sure wnat to start workout"}
-              onDelete={handleNavigate}
-            />
+            <DialogRoot role="alertdialog">
+              <DialogTrigger asChild>
+                <Button
+                  background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+                  color="white"
+                  _hover={{
+                    filter: "brightness(1.2)",
+                    boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+                  }}
+                  size="lg"
+                >
+                  Start Workout
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                background="blackAlpha.900"
+                border="1px solid"
+                borderColor="neon.400"
+                boxShadow="0 0 15px rgba(0, 255, 255, 0.8)"
+                p={4}
+              >
+                <DialogHeader>
+                  <DialogTitle
+                    color="neon.400"
+                    textShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+                  >
+                    Start Workout
+                  </DialogTitle>
+                </DialogHeader>
+                <DialogBody>
+                  <Text color="gray.300">
+                    Are you sure wnat to start workout
+                  </Text>
+                </DialogBody>
+                <DialogFooter>
+                  <Stack direction="row" gap={4}>
+                    <DialogActionTrigger asChild>
+                      <Button
+                        variant="outline"
+                        borderColor="neon.400"
+                        color="neon.400"
+                        _hover={{ borderColor: "neon.300", color: "neon.300" }}
+                      >
+                        No
+                      </Button>
+                    </DialogActionTrigger>
+                    <DialogActionTrigger asChild>
+                      <Button
+                        background="red.600"
+                        color="white"
+                        _hover={{
+                          background: "red.400",
+                          boxShadow: "0 0 15px red",
+                        }}
+                        onClick={handleNavigate}
+                      >
+                        Yes
+                      </Button>
+                    </DialogActionTrigger>
+                  </Stack>
+                </DialogFooter>
+                <DialogCloseTrigger />
+              </DialogContent>
+            </DialogRoot>
             <DrawerContent ref={contentRef}>
               <DrawerCloseTrigger />
-              <DrawerHeader>Add a New Exercise</DrawerHeader>
-
+              <DrawerHeader color="magenta.400">
+                Add a New Exercise
+              </DrawerHeader>
               <DrawerBody>
                 <VStack gap={4}>
                   <ExerciseSelect
@@ -252,29 +329,48 @@ const WorkoutPage: React.FC = () => {
                     setSelectedExerciseId={setSelectedExerciseId}
                     defaultExerciseId={""}
                   />
-                  <NumberInputRoot
-                    defaultValue="3"
-                    min={1}
-                    onValueChange={(e) => setSets(e.valueAsNumber)}
-                  >
-                    <NumberInputField placeholder="Number of Sets" />
-                  </NumberInputRoot>
-
-                  <NumberInputRoot
-                    defaultValue="10"
-                    min={1}
-                    onValueChange={(e) => setReps(e.valueAsNumber)}
-                  >
-                    <NumberInputField placeholder="Number of Reps" />
-                  </NumberInputRoot>
+                  <Flex gap="4">
+                    <Field label="Sets">
+                      <NumberInputRoot
+                        defaultValue="3"
+                        min={1}
+                        onValueChange={(e) => setSets(e.valueAsNumber)}
+                      >
+                        <NumberInputField placeholder="Number of Sets" />
+                      </NumberInputRoot>
+                    </Field>
+                    <Field label="Reps">
+                      <NumberInputRoot
+                        defaultValue="10"
+                        min={1}
+                        onValueChange={(e) => setReps(e.valueAsNumber)}
+                      >
+                        <NumberInputField placeholder="Number of Reps" />
+                      </NumberInputRoot>
+                    </Field>
+                  </Flex>
                 </VStack>
               </DrawerBody>
 
               <DrawerFooter>
                 <DrawerActionTrigger asChild>
-                  <Button variant="outline">Cancel</Button>
+                  <Button
+                    variant="outline"
+                    borderColor="neon.400"
+                    color="neon.400"
+                    _hover={{
+                      borderColor: "neon.300",
+                      color: "neon.300",
+                    }}
+                  >
+                    Cancel
+                  </Button>
                 </DrawerActionTrigger>
-                <Button colorScheme="teal" onClick={handleSubmit}>
+                <Button
+                  background="neon.400"
+                  color="black"
+                  onClick={handleSubmit}
+                >
                   Save
                 </Button>
               </DrawerFooter>

@@ -100,7 +100,7 @@ func (s *WorkoutProgressManager) LogExercise(userID uint, sessionID uint, input 
 	if err != nil {
 		return nil, err
 	}
-	exerciseLog := &ExerciseLog{SessionID: sessionID, ExerciseID: uint(exerciseId), SetNumber: int(input.SetNumber), Reps: int(input.RepsCompleted), Weight: float64(input.WeightUsed)}
+	exerciseLog := &ExerciseLog{SessionID: sessionID, ExerciseID: uint(exerciseId), SetNumber: int(input.SetNumber), Reps: int(input.RepsCompleted), Weight: float64(input.WeightUsed), UserID: userID}
 	err = s.logRepository.Create(exerciseLog)
 	if err != nil {
 		return nil, err
@@ -108,33 +108,45 @@ func (s *WorkoutProgressManager) LogExercise(userID uint, sessionID uint, input 
 	return exerciseLog, nil
 }
 
-func (s *WorkoutProgressManager) GetExerciseLog(userID uint, sessionID uint, logID uint) (*ExerciseLog, error) {
-	session, err := s.sessionRepository.GetByID(sessionID)
-	if err != nil {
-		return nil, err
-	}
-	if session.UserID != userID {
-		return nil, common.ErrAccessForbidden
-	}
+func (s *WorkoutProgressManager) GetExerciseLog(userID uint, logID uint) (*ExerciseLog, error) {
 	log, err := s.logRepository.GetByID(logID)
 	if err != nil {
 		return nil, err
 	}
+	if log.UserID != userID {
+		return nil, common.ErrAccessForbidden
+	}
 	return log, nil
 
 }
-
-func (s *WorkoutProgressManager) GetExerciseLogs(userID uint, sessionID uint) ([]ExerciseLog, error) {
-	session, err := s.sessionRepository.GetByID(sessionID)
-	if err != nil {
-		return nil, err
-	}
-	if session.UserID != userID {
-		return nil, common.ErrAccessForbidden
-	}
-	logs, err := s.logRepository.GetAllByWorkoutLogID(sessionID)
+func (s *WorkoutProgressManager) GetExerciseLogsByUserId(userID uint) ([]ExerciseLog, error) {
+	logs, err := s.logRepository.GetAllByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 	return logs, nil
+}
+
+func (s *WorkoutProgressManager) GetExerciseLogsBySessionId(userID uint, sessionID uint) ([]ExerciseLog, error) {
+	logs, err := s.logRepository.GetAllByUserIDAndSessionID(userID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	return logs, nil
+}
+
+func (s *WorkoutProgressManager) GetExerciseLogsByExerciseId(userID uint, exerciseId uint) ([]ExerciseLog, error) {
+	logs, err := s.logRepository.GetAllByUserIDAndExerciseID(userID, exerciseId)
+	if err != nil {
+		return nil, err
+	}
+	return logs, nil
+}
+
+func (s *WorkoutProgressManager) GetWeightPerDay(userID uint, exerciseId uint, startDate *time.Time, endDate *time.Time) ([]WeightPerDay, error) {
+	weightPerDayArr, err := s.logRepository.GetWeightPerDay(userID, exerciseId, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	return weightPerDayArr, err
 }

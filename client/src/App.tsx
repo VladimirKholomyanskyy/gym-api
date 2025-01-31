@@ -13,7 +13,9 @@ import TrainingProgramsPage from "./components/TrainingProgramsPage";
 import ReadOnlyWorkoutSessionWrapper from "./components/ReadOnlyWorkoutSessionWrapper";
 import EditableWorkoutWrapper from "./components/EditableWorkoutSessionWrapper";
 import WorkoutSessionsPage from "./components/WorkoutSessionsPage";
-
+import ExercisePage from "./components/exercise/ExercisePage";
+import ExercisesPage from "./components/exercise/ExercisesPage";
+import UserProfile from "./components/UserProfile";
 const ProtectedDashboard = PrivateRoute(Dashboard);
 const ProtectedTrainingProgramPage = PrivateRoute(TrainingProgramPage);
 const ProtectedTrainingProgramsPage = PrivateRoute(TrainingProgramsPage);
@@ -23,6 +25,9 @@ const ProtectedReadOnlyWorkoutSession = PrivateRoute(
   ReadOnlyWorkoutSessionWrapper
 );
 const ProtectedWorkoutSessions = PrivateRoute(WorkoutSessionsPage);
+const ProtectedExercisePage = PrivateRoute(ExercisePage);
+const ProtectedExercisesPage = PrivateRoute(ExercisesPage);
+const ProtectedUserProfilePage = PrivateRoute(UserProfile);
 
 function App() {
   const auth = useAuth();
@@ -53,12 +58,7 @@ function App() {
 
   return (
     <Router>
-      <Flex
-        direction="column"
-        height="100vh"
-        className="dark"
-        background="bg.subtle"
-      >
+      <Flex direction="column" height="100vh">
         <Box flex="1" overflowY="auto">
           <Routes>
             <Route path="/" element={<AuthPage />} />
@@ -87,6 +87,12 @@ function App() {
               path="/workout-sessions"
               element={<ProtectedWorkoutSessions />}
             />
+            <Route
+              path="/exercises/:exerciseId"
+              element={<ProtectedExercisePage />}
+            />
+            <Route path="/exercises" element={<ProtectedExercisesPage />} />
+            <Route path="/profile" element={<ProtectedUserProfilePage />} />
           </Routes>
         </Box>
         <BottomNav />

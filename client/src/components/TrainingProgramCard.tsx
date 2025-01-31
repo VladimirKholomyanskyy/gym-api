@@ -12,7 +12,7 @@ import {
   DrawerRoot,
   DrawerTrigger,
 } from "./ui/drawer";
-import ConfirmationDialog from "./common/ConfirmationDialog";
+import DeleteDialog from "./common/DeleteDialog";
 
 interface TrainingProgramCardProps {
   id: string;
@@ -39,19 +39,34 @@ const TrainingProgramCard = ({
   };
 
   return (
-    <Card.Root size="sm" width="100%" background="bg.error" borderRadius="none">
-      <Flex align="stretch">
+    <Card.Root
+      size="sm"
+      width="100%"
+      background="blackAlpha.800"
+      borderRadius="md"
+      boxShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+      p={2}
+      _hover={{ boxShadow: "0 0 20px rgba(0, 255, 255, 1)" }}
+    >
+      <Flex align="stretch" justify="space-between">
         <Card.Body>
-          <Stack gap="4">
+          <Stack gap={4}>
             <Card.Title
-              mt="2"
-              onClick={handleNavigate}
+              fontSize="xl"
+              fontWeight="bold"
+              color="neon.400"
+              textShadow="0 0 10px rgba(0, 255, 255, 0.8)"
               cursor="pointer"
-              _hover={{ color: "blue.500" }}
+              onClick={handleNavigate}
+              _hover={{ color: "neon.300" }}
             >
               {name}
             </Card.Title>
-            {description && <Card.Description>{description}</Card.Description>}
+            {description && (
+              <Card.Description fontSize="md" color="gray.300">
+                {description}
+              </Card.Description>
+            )}
           </Stack>
         </Card.Body>
         <Card.Footer />
@@ -59,28 +74,39 @@ const TrainingProgramCard = ({
           <DrawerRoot placement="bottom">
             <DrawerBackdrop />
             <DrawerTrigger asChild>
-              <IconButton height="100%" borderRadius="none">
+              <IconButton
+                height="100%"
+                borderRadius="md"
+                background="blackAlpha.600"
+                color="white"
+                _hover={{ background: "blackAlpha.400" }}
+                aria-label="Options"
+              >
                 <FaEllipsisVertical />
               </IconButton>
             </DrawerTrigger>
             <DrawerContent>
               <DrawerCloseTrigger />
-              <DrawerHeader>Add a New Training Program</DrawerHeader>
+              <DrawerHeader color="neon.500">
+                Manage Training Program
+              </DrawerHeader>
               <DrawerBody bg="bg.subtle">
                 <Stack align="flex-start">
-                  <ConfirmationDialog
+                  <IconButton
+                    background="transparent"
+                    color="neon.400"
+                    _hover={{ color: "neon.300" }}
+                    aria-label="Edit Program"
+                    onClick={handleNavigate}
+                  >
+                    <FaEdit /> Edit
+                  </IconButton>
+                  <DeleteDialog
                     message={
                       "This action cannot be undone. This will permanently delete your training program."
                     }
                     onDelete={handleDelete}
                   />
-                  <IconButton
-                    colorScheme="red"
-                    aria-label="Delete Program"
-                    onClick={handleNavigate}
-                  >
-                    <FaEdit /> Edit
-                  </IconButton>
                 </Stack>
               </DrawerBody>
               <DrawerFooter></DrawerFooter>

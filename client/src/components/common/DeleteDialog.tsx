@@ -13,34 +13,27 @@ import {
 import { FaTrash } from "react-icons/fa";
 import { Button } from "../ui/button";
 
-interface ConfirmationDialogProps {
+interface DeleteDialogProps {
   message: string;
   onDelete: () => void;
   title?: string;
-  triggerLabel?: string;
-  triggerIcon?: React.ReactNode;
-  cancelLabel?: string;
-  deleteLabel?: string;
 }
 
-const ConfirmationDialog = ({
+const DeleteDialog = ({
   message,
   onDelete,
   title = "Are you sure?",
-  triggerLabel = "Delete",
-  triggerIcon = <FaTrash />,
-  cancelLabel = "Cancel",
-  deleteLabel = "Delete",
-}: ConfirmationDialogProps) => {
+}: DeleteDialogProps) => {
   return (
     <DialogRoot role="alertdialog">
       <DialogTrigger asChild>
         <IconButton
-          color="neon.400"
+          background="transparent"
+          color="red.600"
           _hover={{ color: "neon.300" }}
-          aria-label={triggerLabel}
+          aria-label="Delete"
         >
-          {triggerIcon} {triggerLabel}
+          <FaTrash /> Delete
         </IconButton>
       </DialogTrigger>
       <DialogContent
@@ -70,7 +63,7 @@ const ConfirmationDialog = ({
                 color="neon.400"
                 _hover={{ borderColor: "neon.300", color: "neon.300" }}
               >
-                {cancelLabel}
+                Cancel
               </Button>
             </DialogActionTrigger>
             <DialogActionTrigger asChild>
@@ -80,7 +73,7 @@ const ConfirmationDialog = ({
                 _hover={{ background: "red.400", boxShadow: "0 0 15px red" }}
                 onClick={onDelete}
               >
-                {deleteLabel}
+                Delete
               </Button>
             </DialogActionTrigger>
           </Stack>
@@ -91,4 +84,4 @@ const ConfirmationDialog = ({
   );
 };
 
-export default ConfirmationDialog;
+export default DeleteDialog;

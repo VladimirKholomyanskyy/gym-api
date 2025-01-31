@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router";
 import ReadOnlyWorkoutSession from "./ReadOnlyWorkoutSession";
 import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
-import { WorkoutSessionsApi } from "@/api";
+import { ExerciseLogsApi, WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
 
 const ReadOnlyWorkoutSessionWrapper = () => {
@@ -12,6 +12,7 @@ const ReadOnlyWorkoutSessionWrapper = () => {
   const [exerciseLogs, setExerciseLogs] = useState<LogExerciseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
+  const exerciseLogsApi = new ExerciseLogsApi(apiConfig);
   const navigate = useNavigate();
   if (!id) {
     navigate("/error");
@@ -23,7 +24,8 @@ const ReadOnlyWorkoutSessionWrapper = () => {
         const session = await workoutSessionApi.getWorkoutSession(id);
         console.log("Fetched session:", session);
         setWorkoutSession(session.data);
-        const exLogs = await workoutSessionApi.listExerciseLogs(id);
+
+        const exLogs = await exerciseLogsApi.listExerciseLogs(id);
         console.log("Fetched logs:", exLogs);
         setExerciseLogs(exLogs.data);
       } catch (error) {

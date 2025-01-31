@@ -12,7 +12,7 @@ import {
   DrawerTrigger,
 } from "./ui/drawer";
 import { FaEllipsisVertical } from "react-icons/fa6";
-import ConfirmationDialog from "./common/ConfirmationDialog";
+import DeleteDialog from "./common/DeleteDialog";
 
 export interface WorkoutCardProps {
   workoutId: string;
@@ -42,51 +42,74 @@ const WorkoutCard = ({
   const joinedExercises = exercises.join(", ");
 
   return (
-    <Card.Root size="sm" width="100%" background="bg.error" borderRadius="none">
-      <Flex align="stretch">
+    <Card.Root
+      size="sm"
+      width="100%"
+      background="blackAlpha.800"
+      borderRadius="md"
+      boxShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+      p={2}
+      _hover={{ boxShadow: "0 0 20px rgba(0, 255, 255, 1)" }}
+    >
+      <Flex align="stretch" justify="space-between">
         <Card.Body>
           <Stack gap="4">
             <Box>
-              <Card.Title onClick={handleNavigate} cursor="pointer">
+              <Card.Title
+                fontSize="xl"
+                fontWeight="bold"
+                color="neon.400"
+                textShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+                cursor="pointer"
+                onClick={handleNavigate}
+                _hover={{ color: "neon.300" }}
+              >
                 {name}
               </Card.Title>
               {joinedExercises && (
-                <Card.Description>{joinedExercises}</Card.Description>
+                <Card.Description fontSize="md" color="gray.300">
+                  {joinedExercises}
+                </Card.Description>
               )}
             </Box>
           </Stack>
         </Card.Body>
-        <Card.Footer
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-        ></Card.Footer>
+        <Card.Footer />
         <Box>
           <DrawerRoot placement="bottom">
             <DrawerBackdrop />
             <DrawerTrigger asChild>
-              <IconButton height="100%" borderRadius="none">
+              <IconButton
+                height="100%"
+                borderRadius="md"
+                background="blackAlpha.600"
+                color="white"
+                _hover={{ background: "blackAlpha.400" }}
+                aria-label="Options"
+              >
                 <FaEllipsisVertical />
               </IconButton>
             </DrawerTrigger>
             <DrawerContent>
               <DrawerCloseTrigger />
-              <DrawerHeader>Add a New Training Program</DrawerHeader>
+              <DrawerHeader color="neon.500">Add a New Workout</DrawerHeader>
               <DrawerBody bg="bg.subtle">
                 <Stack align="flex-start">
-                  <ConfirmationDialog
+                  <IconButton
+                    background="transparent"
+                    color="neon.400"
+                    _hover={{ color: "neon.300" }}
+                    aria-label="Edit Program"
+                    onClick={handleNavigate}
+                  >
+                    <FaEdit /> Edit
+                  </IconButton>
+                  <DeleteDialog
                     message={
                       "This action cannot be undone. This will permanently delete your workout."
                     }
                     onDelete={handleDelete}
                   />
-                  <IconButton
-                    colorScheme="red"
-                    aria-label="Delete Program"
-                    onClick={handleNavigate}
-                  >
-                    <FaEdit /> Edit
-                  </IconButton>
                 </Stack>
               </DrawerBody>
               <DrawerFooter></DrawerFooter>

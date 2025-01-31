@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
@@ -101,7 +102,7 @@ func (s *WorkoutProgressHandler) AddWorkoutSession(ctx context.Context, startWor
 }
 
 // FinishWorkoutSession - Mark a workout session as completed
-func (h *WorkoutProgressHandler) FinishWorkoutSession(ctx context.Context, workoutSessionId string) (openapi.ImplResponse, error) {
+func (h *WorkoutProgressHandler) CompleteWorkoutSession(ctx context.Context, workoutSessionId string) (openapi.ImplResponse, error) {
 	userID := ctx.Value(common.UserIDKey).(uint)
 	sessionID, err := strconv.Atoi(workoutSessionId)
 	if err != nil {
@@ -124,18 +125,45 @@ func (h *WorkoutProgressHandler) FinishWorkoutSession(ctx context.Context, worko
 }
 
 // ListExerciseLogs - Retrieve all logged exercises for a workout session
-func (h *WorkoutProgressHandler) ListExerciseLogs(ctx context.Context, workoutSessionId string) (openapi.ImplResponse, error) {
+func (h *WorkoutProgressHandler) ListExerciseLogs(ctx context.Context, workoutSessionIdParam, exerciseIdParam string) (openapi.ImplResponse, error) {
 	userID := ctx.Value(common.UserIDKey).(uint)
-	sessionID, err := strconv.Atoi(workoutSessionId)
-	if err != nil {
-		return openapi.Response(http.StatusBadRequest, nil), nil
+	var (
+		exerciseLogs  []ExerciseLog
+		convertedLogs []openapi.LogExerciseResponse
+		err           error
+	)
+
+	switch {
+	case workoutSessionIdParam != "":
+		// Parse workout session ID
+		sessionID, parseErr := strconv.Atoi(workoutSessionIdParam)
+		if parseErr != nil {
+			return openapi.Response(http.StatusBadRequest, "Invalid workout session ID"), nil
+		}
+		// Fetch logs by session ID
+		exerciseLogs, err = h.s.logRepository.GetAllByUserIDAndSessionID(userID, uint(sessionID))
+
+	case exerciseIdParam != "":
+		// Parse exercise ID
+		exerciseID, parseErr := strconv.Atoi(exerciseIdParam)
+		if parseErr != nil {
+			return openapi.Response(http.StatusBadRequest, "Invalid exercise ID"), nil
+		}
+		// Fetch logs by exercise ID
+		exerciseLogs, err = h.s.logRepository.GetAllByUserIDAndExerciseID(userID, uint(exerciseID))
+
+	default:
+		// Fetch all logs for the user
+		exerciseLogs, err = h.s.logRepository.GetAllByUserID(userID)
 	}
-	logs, err := h.s.GetExerciseLogs(userID, uint(sessionID))
+
+	// Handle repository error
 	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
+		return openapi.Response(http.StatusInternalServerError, "Failed to fetch exercise logs"), nil
 	}
-	var convertedLogs []openapi.LogExerciseResponse
-	for _, log := range logs {
+
+	// Convert logs to response format
+	for _, log := range exerciseLogs {
 		convertedLogs = append(convertedLogs, openapi.LogExerciseResponse{
 			Id:            fmt.Sprintf("%d", log.ID),
 			ExerciseId:    fmt.Sprintf("%d", log.ExerciseID),
@@ -150,9 +178,9 @@ func (h *WorkoutProgressHandler) ListExerciseLogs(ctx context.Context, workoutSe
 }
 
 // LogExercise - Log an exercise during a workout session
-func (h *WorkoutProgressHandler) LogExercise(ctx context.Context, workoutSessionId string, logExerciseRequest openapi.LogExerciseRequest) (openapi.ImplResponse, error) {
+func (h *WorkoutProgressHandler) LogExercise(ctx context.Context, logExerciseRequest openapi.LogExerciseRequest) (openapi.ImplResponse, error) {
 	userID := ctx.Value(common.UserIDKey).(uint)
-	sessionID, err := strconv.Atoi(workoutSessionId)
+	sessionID, err := strconv.Atoi(logExerciseRequest.WorkoutSessionId)
 	if err != nil {
 		return openapi.Response(http.StatusBadRequest, nil), nil
 	}
@@ -171,17 +199,13 @@ func (h *WorkoutProgressHandler) LogExercise(ctx context.Context, workoutSession
 }
 
 // GetExerciseLog - Retrieve details of a specific exercise log
-func (h *WorkoutProgressHandler) GetExerciseLog(ctx context.Context, workoutSessionId string, exerciseLogId string) (openapi.ImplResponse, error) {
+func (h *WorkoutProgressHandler) GetExerciseLog(ctx context.Context, exerciseLogId string) (openapi.ImplResponse, error) {
 	userID := ctx.Value(common.UserIDKey).(uint)
-	sessionID, err := strconv.Atoi(workoutSessionId)
-	if err != nil {
-		return openapi.Response(http.StatusBadRequest, nil), nil
-	}
 	logID, err := strconv.Atoi(exerciseLogId)
 	if err != nil {
 		return openapi.Response(http.StatusBadRequest, nil), nil
 	}
-	log, err := h.s.GetExerciseLog(userID, uint(sessionID), uint(logID))
+	log, err := h.s.GetExerciseLog(userID, uint(logID))
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, nil), nil
 	}
@@ -192,6 +216,59 @@ func (h *WorkoutProgressHandler) GetExerciseLog(ctx context.Context, workoutSess
 		RepsCompleted: int32(log.Reps),
 		WeightUsed:    int32(log.Weight),
 		LoggedAt:      log.LoggedAt,
+	}), nil
+}
+
+func (h *WorkoutProgressHandler) GetWeightPerDay(ctx context.Context, exerciseId string, startDate string, endDate string) (openapi.ImplResponse, error) {
+	userID := ctx.Value(common.UserIDKey).(uint)
+
+	// Parse exerciseId
+	exerciseID, err := strconv.Atoi(exerciseId)
+	if err != nil {
+		return openapi.Response(http.StatusBadRequest, "Invalid exerciseId"), nil
+	}
+
+	// Define date layout and initialize pointers
+	layout := "2006-01-02"
+	var startDatePtr, endDatePtr *time.Time
+
+	// Parse startDate
+	if startDate != "" {
+		parsedStartDate, err := time.Parse(layout, startDate)
+		if err != nil {
+			return openapi.Response(http.StatusBadRequest, "Invalid startDate format"), nil
+		}
+		startDatePtr = &parsedStartDate
+	}
+
+	// Parse endDate
+	if endDate != "" {
+		parsedEndDate, err := time.Parse(layout, endDate)
+		if err != nil {
+			return openapi.Response(http.StatusBadRequest, "Invalid endDate format"), nil
+		}
+		endDatePtr = &parsedEndDate
+	}
+
+	// Fetch weight per day data from service
+	weightPerDayList, err := h.s.GetWeightPerDay(userID, uint(exerciseID), startDatePtr, endDatePtr)
+	if err != nil {
+		return openapi.Response(http.StatusInternalServerError, "Failed to fetch weight per day"), nil
+	}
+
+	// Convert response to OpenAPI format
+	var response []openapi.WeightPerDayResponseTotalWeightPerDayInner
+	for _, v := range weightPerDayList {
+		response = append(response, openapi.WeightPerDayResponseTotalWeightPerDayInner{
+			Date:        v.Date.Format(layout),
+			TotalWeight: float32(v.TotalWeight),
+		})
+	}
+
+	// Return response
+	return openapi.Response(http.StatusOK, openapi.WeightPerDayResponse{
+		ExerciseId:        exerciseId,
+		TotalWeightPerDay: response,
 	}), nil
 }
 

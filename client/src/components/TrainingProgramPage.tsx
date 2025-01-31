@@ -158,23 +158,22 @@ const TrainingProgramPage: React.FC = () => {
     }
   };
   return (
-    <Box>
-      <Box mb={7} mt={7}>
-        <Heading size="2xl" fontWeight="bold" textAlign="center">
-          {program?.name}
-        </Heading>
-        <Heading size="lg">{program?.description}</Heading>
-      </Box>
-      <VStack
-        gap={6}
-        align="stretch"
-        width="100%"
-        paddingLeft="8"
-        paddingRight="8"
+    <Box width="100%" minHeight="100vh" background="bg.subtle" p={6}>
+      <Heading
+        size="2xl"
+        fontWeight="bold"
+        textAlign="center"
+        color="magenta.400"
+        textShadow="0 0 10px rgba(255, 0, 255, 0.8)"
       >
+        {program?.name}
+      </Heading>
+      <Heading size="lg">{program?.description}</Heading>
+
+      <VStack gap={6} align="stretch" width="100%" p={4}>
         {loading ? (
-          <Flex justifyContent="center" alignItems="center" height="100%">
-            <Spinner />
+          <Flex justifyContent="center" alignItems="center" height="50vh">
+            <Spinner size="xl" color="magenta.400" />
           </Flex>
         ) : (
           workoutExerciseCard.map((workout) => (
@@ -188,17 +187,25 @@ const TrainingProgramPage: React.FC = () => {
             />
           ))
         )}
-        <Flex gap="4">
+        <Flex justifyContent="space-between">
           <DrawerRoot placement="bottom">
             <DrawerBackdrop />
             <DrawerTrigger asChild>
-              <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
-                Add Workout
+              <Button
+                background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+                color="white"
+                _hover={{
+                  filter: "brightness(1.2)",
+                  boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+                }}
+                size="lg"
+              >
+                + Add Workout
               </Button>
             </DrawerTrigger>
-            <DrawerContent ref={ref}>
+            <DrawerContent ref={ref} background="blackAlpha.900">
               <DrawerCloseTrigger />
-              <DrawerHeader>Add a New Workout</DrawerHeader>
+              <DrawerHeader color="magenta.400">Add a New Workout</DrawerHeader>
               <DrawerBody>
                 <VStack gap={4}>
                   <Field label="Name">
@@ -215,7 +222,11 @@ const TrainingProgramPage: React.FC = () => {
                 <DrawerActionTrigger asChild>
                   <Button variant="outline">Cancel</Button>
                 </DrawerActionTrigger>
-                <Button colorScheme="teal" onClick={handleCreateWorkout}>
+                <Button
+                  background="magenta.400"
+                  color="black"
+                  onClick={handleCreateWorkout}
+                >
                   Save
                 </Button>
               </DrawerFooter>
@@ -224,13 +235,23 @@ const TrainingProgramPage: React.FC = () => {
           <DrawerRoot placement="bottom">
             <DrawerBackdrop />
             <DrawerTrigger asChild>
-              <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
+              <Button
+                background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+                color="white"
+                _hover={{
+                  filter: "brightness(1.2)",
+                  boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+                }}
+                size="lg"
+              >
                 Edit Program
               </Button>
             </DrawerTrigger>
             <DrawerContent ref={ref}>
               <DrawerCloseTrigger />
-              <DrawerHeader>Edit Training Program</DrawerHeader>
+              <DrawerHeader color="magenta.400">
+                Edit Training Program
+              </DrawerHeader>
               <DrawerBody>
                 <VStack gap={4}>
                   <Field label="Name">
@@ -255,7 +276,11 @@ const TrainingProgramPage: React.FC = () => {
                 <DrawerActionTrigger asChild>
                   <Button variant="outline">Cancel</Button>
                 </DrawerActionTrigger>
-                <Button colorScheme="teal" onClick={handleUpdateProgram}>
+                <Button
+                  background="magenta.400"
+                  color="black"
+                  onClick={handleUpdateProgram}
+                >
                   Save
                 </Button>
               </DrawerFooter>

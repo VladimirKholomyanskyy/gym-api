@@ -14,6 +14,8 @@ tags:
     description: Operations related to exercises within workouts
   - name: Workout Sessions
     description: Operations related to workout sessions
+  - name: Exercise logs
+    description: Operations related to logging progress
 paths:
   /api/exercises:
     get:
@@ -465,12 +467,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WorkoutSessionResponse"
-  /api/workout-sessions/{workoutSessionId}/finish:
+  /api/workout-sessions/{workoutSessionId}/complete:
     post:
       summary: Mark a workout session as completed
       tags:
         - Workout Sessions
-      operationId: finishWorkoutSession
+      operationId: completeWorkoutSession
       parameters:
         - name: workoutSessionId
           in: path
@@ -513,19 +515,12 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden
-  /api/workout-sessions/{workoutSessionId}/logs:
+  /api/exercise-logs:
     post:
       summary: Log an exercise during a workout session
       tags:
-        - Workout Sessions
+        - Exercise logs
       operationId: logExercise
-      parameters:
-        - name: workoutSessionId
-          in: path
-          description: ID of the workout session to log the exercise for
-          required: true
-          schema:
-            type: string
       requestBody:
         description: Log details for the exercise
         content:
@@ -545,15 +540,21 @@ paths:
         "403":
           description: Forbidden
     get:
-      summary: Retrieve all logged exercises for a workout session
+      summary: Retrieve all logged exercises
       tags:
-        - Workout Sessions
+        - Exercise logs
       operationId: listExerciseLogs
       parameters:
         - name: workoutSessionId
-          in: path
-          description: ID of the workout session to retrieve logs for
-          required: true
+          in: query
+          description: filter exercise logs by session id
+          required: false
+          schema:
+            type: string
+        - name: exerciseId
+          in: query
+          description: filter exercise logs by exercise id
+          required: false
           schema:
             type: string
       responses:
@@ -565,19 +566,51 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/LogExerciseResponse"
-  /api/workout-sessions/{workoutSessionId}/logs/{exerciseLogId}:
+  /api/exercise-logs/weight-per-day:
+    get:
+      summary: Calculate total weight lifted per day for a specific exercise
+      tags:
+        - Exercise logs
+      operationId: getWeightPerDay
+      parameters:
+        - name: exerciseId
+          in: query
+          required: true
+          description: The ID of the exercise
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          required: false
+          description: Filter logs from this date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          description: Filter logs up to this date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: A list of total weights per day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightPerDayResponse"
+        "400":
+          description: Bad request
+        "500":
+          description: Internal server error
+  /api/exercise-logs/{exerciseLogId}:
     get:
       summary: Retrieve details of a specific exercise log
       tags:
-        - Workout Sessions
+        - Exercise logs
       operationId: getExerciseLog
       parameters:
-        - name: workoutSessionId
-          in: path
-          description: ID of the workout session
-          required: true
-          schema:
-            type: string
         - name: exerciseLogId
           in: path
           description: ID of the specific exercise log
@@ -591,6 +624,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LogExerciseResponse"
+
 components:
   schemas:
     Exercise:
@@ -829,10 +863,14 @@ components:
       type: object
       required:
         - exerciseId
+        - workoutSessionId
         - setNumber
         - repsCompleted
         - weightUsed
       properties:
+        workoutSessionId:
+          type: string
+          description: Identifier for workout session
         exerciseId:
           type: string
           description: Identifier for the exercise being logged.
@@ -854,6 +892,7 @@ components:
       required:
         - id
         - exerciseId
+        - workoutSessionId
         - setNumber
         - repsCompleted
         - weightUsed
@@ -865,6 +904,9 @@ components:
         exerciseId:
           type: string
           description: Identifier for the exercise being logged.
+        workoutSessionId:
+          type: string
+          description: Identifier for workout session
         setNumber:
           type: integer
           format: int32
@@ -881,6 +923,22 @@ components:
           type: string
           format: date-time
           description: Timestamp when the exercise log was created.
+    WeightPerDayResponse:
+      type: object
+      properties:
+        exerciseId:
+          type: string
+        totalWeightPerDay:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              totalWeight:
+                type: number
+                format: float
   securitySchemes:
     bearerAuth: # arbitrary name for the security scheme
       type: http

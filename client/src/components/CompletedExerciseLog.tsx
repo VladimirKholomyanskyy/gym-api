@@ -15,7 +15,7 @@ const CompletedExerciseLog = ({
   items,
 }: CompletedExerciseLogProps) => {
   return (
-    <Card.Root>
+    <Card.Root size="sm">
       <Card.Header>{exerciseName}</Card.Header>
       <Card.Body>
         <Table.Root size="sm">

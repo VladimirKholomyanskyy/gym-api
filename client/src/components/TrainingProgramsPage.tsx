@@ -141,88 +141,95 @@ const TrainingProgramsPage: React.FC = () => {
   };
 
   return (
-    <Box width="100%">
-      <Box mb={7} mt={7}>
-        <Heading size="2xl" fontWeight="bold" textAlign="center">
-          Training Programs
-        </Heading>
-      </Box>
+    <Box width="100%" minHeight="100vh" background="bg.subtle" p={6}>
+      <Heading
+        size="2xl"
+        fontWeight="bold"
+        textAlign="center"
+        color="magenta.400"
+        textShadow="0 0 10px rgba(255, 0, 255, 0.8)"
+      >
+        Training Programs
+      </Heading>
       {loading ? (
         <Flex justifyContent="center" alignItems="center" height="50vh">
-          <Spinner size="xl" />
+          <Spinner size="xl" color="magenta.400" />
         </Flex>
       ) : (
-        <>
-          <VStack
-            gap={6}
-            align="stretch"
-            width="100%"
-            paddingLeft="8"
-            paddingRight="8"
-          >
-            {programs.map((program) => (
-              <TrainingProgramCard
-                key={program.id}
-                id={program.id}
-                name={program.name}
-                description={program.description}
-                onDelete={handleDeleteProgram}
-                onUpdate={handleUpdateProgram}
-              />
-            ))}
-            <DrawerRoot placement="bottom">
-              <DrawerBackdrop />
-              <DrawerTrigger asChild>
-                <Button colorScheme="teal" aria-label="Add Exercise" size="lg">
-                  Add Program
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent ref={ref}>
-                <DrawerCloseTrigger />
-                <DrawerHeader>Add a New Training Program</DrawerHeader>
-                <DrawerBody>
-                  <VStack gap={4}>
-                    <Field label="Name">
-                      <Input
-                        ref={ref}
-                        placeholder="Training program name"
-                        value={newProgram.name}
-                        onChange={(e) =>
-                          setNewProgram((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                    <Field label="Description">
-                      <Input
-                        placeholder="Description"
-                        value={newProgram.description}
-                        onChange={(e) =>
-                          setNewProgram((prev) => ({
-                            ...prev,
-                            description: e.target.value,
-                          }))
-                        }
-                      />
-                    </Field>
-                  </VStack>
-                </DrawerBody>
-                <DrawerFooter>
-                  <DrawerActionTrigger asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DrawerActionTrigger>
-                  <DrawerActionTrigger asChild>
-                    <Button colorScheme="teal" onClick={handleAddProgram}>
-                      Save
-                    </Button>
-                  </DrawerActionTrigger>
-                </DrawerFooter>
-              </DrawerContent>
-            </DrawerRoot>
-          </VStack>
-        </>
+        <VStack gap={6} align="stretch" width="100%" p={4}>
+          {programs.map((program) => (
+            <TrainingProgramCard
+              key={program.id}
+              id={program.id}
+              name={program.name}
+              description={program.description}
+              onDelete={handleDeleteProgram}
+              onUpdate={handleUpdateProgram}
+            />
+          ))}
+          <DrawerRoot placement="bottom">
+            <DrawerBackdrop />
+            <DrawerTrigger asChild>
+              <Button
+                background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+                color="white"
+                _hover={{
+                  filter: "brightness(1.2)",
+                  boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+                }}
+                size="lg"
+              >
+                + Add Program
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent ref={ref} background="blackAlpha.900">
+              <DrawerCloseTrigger />
+              <DrawerHeader color="magenta.400">
+                Add a New Training Program
+              </DrawerHeader>
+              <DrawerBody>
+                <VStack gap={4}>
+                  <Field label="Name">
+                    <Input
+                      ref={ref}
+                      placeholder="Training program name"
+                      value={newProgram.name}
+                      onChange={(e) =>
+                        setNewProgram({ ...newProgram, name: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Description">
+                    <Input
+                      placeholder="Description"
+                      value={newProgram.description}
+                      onChange={(e) =>
+                        setNewProgram({
+                          ...newProgram,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </Field>
+                </VStack>
+              </DrawerBody>
+              <DrawerFooter>
+                <DrawerActionTrigger asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DrawerActionTrigger>
+                <DrawerActionTrigger asChild>
+                  <Button
+                    background="magenta.400"
+                    color="black"
+                    onClick={handleAddProgram}
+                  >
+                    Save
+                  </Button>
+                </DrawerActionTrigger>
+              </DrawerFooter>
+            </DrawerContent>
+          </DrawerRoot>
+        </VStack>
       )}
     </Box>
   );

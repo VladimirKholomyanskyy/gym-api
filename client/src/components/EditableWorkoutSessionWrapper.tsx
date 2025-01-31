@@ -4,7 +4,7 @@ import EditableWorkoutSession from "./EditableWorkoutSession";
 
 import { Flex, Spinner } from "@chakra-ui/react";
 import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
-import { WorkoutSessionsApi } from "@/api";
+import { ExerciseLogsApi, WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
 
 const EditableWorkoutWrapper = () => {
@@ -15,6 +15,7 @@ const EditableWorkoutWrapper = () => {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
+  const exerciseLogsApi = new ExerciseLogsApi(apiConfig);
   const navigate = useNavigate();
   if (!id) {
     navigate("/error");
@@ -26,7 +27,7 @@ const EditableWorkoutWrapper = () => {
         const session = await workoutSessionApi.getWorkoutSession(id);
         console.log("Fetched session:", session);
         setWorkoutSession(session.data);
-        const exLogs = await workoutSessionApi.listExerciseLogs(id);
+        const exLogs = await exerciseLogsApi.listExerciseLogs(id);
         console.log("Fetched logs:", exLogs);
         setExerciseLogs(exLogs.data);
       } catch (error) {

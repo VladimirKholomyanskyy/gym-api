@@ -12,7 +12,7 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { WorkoutSessionsApi } from "@/api";
+import { ExerciseLogsApi, WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
 import { formatDateTime } from "@/utils/dateUtils";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
@@ -32,6 +32,7 @@ const EditableWorkoutSession = ({
     });
   };
   const workoutSessionApi = new WorkoutSessionsApi(apiConfig);
+  const exerciseLogsApi = new ExerciseLogsApi(apiConfig);
   // Function to handle "Previous" button
   const handlePrevious = () => {
     setCurrentCardIndex((prevIndex) =>
@@ -41,7 +42,7 @@ const EditableWorkoutSession = ({
 
   const handleComplete = async () => {
     try {
-      await workoutSessionApi.finishWorkoutSession(session.id);
+      await workoutSessionApi.completeWorkoutSession(session.id);
     } catch (error) {
       console.log(error);
     }
@@ -53,7 +54,8 @@ const EditableWorkoutSession = ({
     weightUsed: number
   ) => {
     try {
-      await workoutSessionApi.logExercise(session.id, {
+      await exerciseLogsApi.logExercise({
+        workoutSessionId: session.id,
         exerciseId: exerciseId,
         repsCompleted: repsCompleted,
         setNumber: setNumber,
@@ -65,18 +67,18 @@ const EditableWorkoutSession = ({
   };
 
   const computedLogItems =
-    session?.workoutSnapshot?.workoutExercises?.map((exercise) => {
+    session?.workoutSnapshot?.workoutExercises?.map((workoutExercise) => {
       const exLogs: ExerciseLogItem[] = Array.from(
-        { length: exercise.sets },
+        { length: workoutExercise.sets },
         (_, index) => {
           const found = logs?.find(
-            (e) => exercise.id === e.id && e.setNumber === index + 1
+            (e) => workoutExercise.id === e.id && e.setNumber === index + 1
           );
           return {
             id: index + 1,
             prevReps: 3,
             prevWeight: 20,
-            reqReps: exercise.reps,
+            reqReps: workoutExercise.reps,
             currentReps: found?.repsCompleted,
             currentWeight: found?.weightUsed,
           };
@@ -84,8 +86,8 @@ const EditableWorkoutSession = ({
       );
 
       return {
-        exerciseId: exercise.id,
-        exerciseName: exercise.exercise?.name,
+        exerciseId: workoutExercise.exercise?.id,
+        exerciseName: workoutExercise.exercise?.name,
         logs: exLogs,
       };
     }) || [];
@@ -125,7 +127,7 @@ const EditableWorkoutSession = ({
                     weightUsed: number
                   ): void {
                     handleLog(
-                      computedLogItems[currentCardIndex].exerciseId,
+                      computedLogItems[currentCardIndex].exerciseId as string,
                       setNumber,
                       repsCompleted,
                       weightUsed

@@ -36,10 +36,18 @@ func (s *Server) RegisterRoutes() http.Handler {
 	WorkoutsAPIController := openapi.NewWorkoutsAPIController(s.TrainingProgram)
 	WorkoutExercisesAPIController := openapi.NewWorkoutExercisesAPIController(s.WorkoutExerciseHandler)
 	WorkoutSessionsAPIController := openapi.NewWorkoutSessionsAPIController(s.WorkoutLogsHandler)
+	ExerciseLogsApiController := openapi.NewExerciseLogsAPIController(s.WorkoutLogsHandler)
 
 	// Create a new router
 	router := mux.NewRouter()
-	r := openapi.NewRouter(ExercisesAPIController, TrainingProgramsAPIController, WorkoutExercisesAPIController, WorkoutSessionsAPIController, WorkoutsAPIController)
+	r := openapi.NewRouter(
+		ExercisesAPIController,
+		TrainingProgramsAPIController,
+		WorkoutExercisesAPIController,
+		WorkoutSessionsAPIController,
+		WorkoutsAPIController,
+		ExerciseLogsApiController,
+	)
 	r.Use(s.KeycloakMiddleware.Authenticate)
 	router.PathPrefix("/api").Handler(r)
 
