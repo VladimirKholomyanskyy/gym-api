@@ -109,7 +109,7 @@ const TrainingProgramCard = ({
                   />
                 </Stack>
               </DrawerBody>
-              <DrawerFooter></DrawerFooter>
+              <DrawerFooter />
             </DrawerContent>
           </DrawerRoot>
         </Box>

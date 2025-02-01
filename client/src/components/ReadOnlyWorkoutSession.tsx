@@ -29,19 +29,24 @@ const ReadOnlyWorkoutSession = ({
     }) || [];
 
   return (
-    <Stack>
-      <Box mb={7} mt={7}>
-        <Heading size="2xl" fontWeight="bold" textAlign="center">
-          {session?.workoutSnapshot.name}
-        </Heading>
-        <Heading size="lg">
-          Started at: {formatDateTime(session?.startedAt)}
-        </Heading>
-        <Heading size="lg">
-          Completed at: {formatDateTime(session?.startedAt)}
-        </Heading>
-      </Box>
-      <VStack align="stretch" width="100%" paddingLeft="8" paddingRight="8">
+    <Box width="100%" minHeight="100vh" background="bg.subtle" p={6}>
+      <Heading
+        size="2xl"
+        fontWeight="bold"
+        textAlign="center"
+        color="magenta.400"
+        textShadow="0 0 10px rgba(255, 0, 255, 0.8)"
+      >
+        {session?.workoutSnapshot.name}
+      </Heading>
+      <Heading size="lg">
+        Started at: {formatDateTime(session?.startedAt)}
+      </Heading>
+      <Heading size="lg">
+        Completed at: {formatDateTime(session?.startedAt)}
+      </Heading>
+
+      <VStack gap={6} align="stretch" width="100%" p={4}>
         <For each={computedLogItems}>
           {(item, index) => (
             <CompletedExerciseLog
@@ -52,7 +57,7 @@ const ReadOnlyWorkoutSession = ({
           )}
         </For>
       </VStack>
-    </Stack>
+    </Box>
   );
 };
 

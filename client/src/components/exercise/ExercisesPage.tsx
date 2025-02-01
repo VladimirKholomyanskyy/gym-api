@@ -38,7 +38,16 @@ const ExercisesPage = () => {
       <VStack gap={6} align="stretch" width="100%" p={4}>
         <For each={exercises}>
           {(exercise, index) => (
-            <Card.Root size="sm" key={index}>
+            <Card.Root
+              key={index}
+              size="sm"
+              width="100%"
+              background="blackAlpha.800"
+              borderRadius="md"
+              boxShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+              p={2}
+              _hover={{ boxShadow: "0 0 20px rgba(0, 255, 255, 1)" }}
+            >
               <Card.Body color="fg.muted">
                 <Card.Title
                   fontSize="xl"

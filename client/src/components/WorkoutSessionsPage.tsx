@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import WorkoutSessionCard, {
   WorkoutSessionCardProps,
 } from "./WorkoutSessionCard";
-import { Box, For, Heading, Spinner, Stack, VStack } from "@chakra-ui/react";
+import { Box, For, Heading, Spinner, VStack } from "@chakra-ui/react";
 import { WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
 
@@ -42,19 +42,18 @@ const WorkoutSessionsPage = () => {
 
   if (loading) return <Spinner>Loading...</Spinner>;
   return (
-    <Stack>
-      <Box mb={7} mt={7}>
-        <Heading size="2xl" fontWeight="bold" textAlign="center">
-          Workout Sessions
-        </Heading>
-      </Box>
-      <VStack
-        gap={6}
-        align="stretch"
-        width="100%"
-        paddingLeft="8"
-        paddingRight="8"
+    <Box width="100%" minHeight="100vh" background="bg.subtle" p={6}>
+      <Heading
+        size="2xl"
+        fontWeight="bold"
+        textAlign="center"
+        color="magenta.400"
+        textShadow="0 0 10px rgba(255, 0, 255, 0.8)"
       >
+        Workout Sessions
+      </Heading>
+
+      <VStack gap={6} align="stretch" width="100%" p={4}>
         <For each={workoutSessionsCardProps}>
           {(item, index) => (
             <WorkoutSessionCard
@@ -68,7 +67,7 @@ const WorkoutSessionsPage = () => {
           )}
         </For>
       </VStack>
-    </Stack>
+    </Box>
   );
 };
 
