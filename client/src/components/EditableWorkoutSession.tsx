@@ -2,15 +2,7 @@ import { LogExerciseResponse, WorkoutSessionResponse } from "@/api/models";
 import ExerciseLog, { ExerciseLogItem } from "./ExerciseLog";
 import { Button } from "./ui/button";
 
-import {
-  Stack,
-  Heading,
-  Card,
-  Flex,
-  Box,
-  VStack,
-  IconButton,
-} from "@chakra-ui/react";
+import { Heading, Card, Flex, Box, VStack, IconButton } from "@chakra-ui/react";
 import { useState } from "react";
 import { ExerciseLogsApi, WorkoutSessionsApi } from "@/api";
 import { apiConfig } from "@/api/apiConfig";
@@ -93,26 +85,54 @@ const EditableWorkoutSession = ({
     }) || [];
   console.log("computedLogItems:", computedLogItems);
   return (
-    <Stack>
-      <Box mb={7} mt={7}>
-        <Heading size="2xl" fontWeight="bold" textAlign="center">
-          {session?.workoutSnapshot.name}
-        </Heading>
-        <Heading size="lg">{formatDateTime(session?.startedAt)}</Heading>
-      </Box>
-      <VStack align="stretch" width="100%" paddingLeft="8" paddingRight="8">
+    <Box width="100%" minHeight="100vh" background="bg.subtle" p={6}>
+      <Heading
+        size="2xl"
+        fontWeight="bold"
+        textAlign="center"
+        color="magenta.400"
+        textShadow="0 0 10px rgba(255, 0, 255, 0.8)"
+      >
+        {session?.workoutSnapshot.name}
+      </Heading>
+      <Heading size="lg">{formatDateTime(session?.startedAt)}</Heading>
+
+      <VStack gap={6} align="stretch" width="100%" p={4}>
         {computedLogItems.length > 0 &&
           computedLogItems[currentCardIndex]?.logs && (
-            <Card.Root>
+            <Card.Root
+              size="sm"
+              width="100%"
+              background="blackAlpha.800"
+              borderRadius="md"
+              boxShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+              p={2}
+              _hover={{ boxShadow: "0 0 20px rgba(0, 255, 255, 1)" }}
+            >
               <Card.Header>
-                <Flex justify="space-between">
-                  <IconButton onClick={handlePrevious}>
+                <Flex justify="space-between" align="center">
+                  <IconButton
+                    color="neon.500"
+                    onClick={handlePrevious}
+                    background="transparent"
+                  >
                     <FaChevronLeft />
                   </IconButton>
-                  <Card.Title>
+                  <Card.Title
+                    fontSize="xl"
+                    fontWeight="bold"
+                    color="neon.400"
+                    textShadow="0 0 10px rgba(0, 255, 255, 0.8)"
+                    cursor="pointer"
+                    _hover={{ color: "neon.300" }}
+                  >
                     {computedLogItems[currentCardIndex].exerciseName}
                   </Card.Title>
-                  <IconButton onClick={handleNext}>
+                  <IconButton
+                    color="neon.500"
+                    background="transparent"
+                    onClick={handleNext}
+                  >
                     <FaChevronRight />
                   </IconButton>
                 </Flex>
@@ -139,11 +159,32 @@ const EditableWorkoutSession = ({
             </Card.Root>
           )}
         <Flex gap="4" justify="space-between">
-          <Button>Add Note</Button>
-          <Button onClick={handleComplete}>Finish</Button>
+          <Button
+            background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+            color="white"
+            _hover={{
+              filter: "brightness(1.2)",
+              boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+            }}
+            size="lg"
+          >
+            Add Note
+          </Button>
+          <Button
+            background="linear-gradient(90deg, rgba(255,0,255,1) 0%, rgba(0,255,255,1) 100%)"
+            color="white"
+            _hover={{
+              filter: "brightness(1.2)",
+              boxShadow: "0 0 10px rgba(255, 0, 255, 0.8)",
+            }}
+            size="lg"
+            onClick={handleComplete}
+          >
+            Finish
+          </Button>
         </Flex>
       </VStack>
-    </Stack>
+    </Box>
   );
 };
 

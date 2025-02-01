@@ -1,4 +1,4 @@
-import { Box, For, Heading, Stack, VStack } from "@chakra-ui/react";
+import { Box, For, Heading, VStack } from "@chakra-ui/react";
 import CompletedExerciseLog, {
   CompletedExerciseLogItem,
 } from "./CompletedExerciseLog";
