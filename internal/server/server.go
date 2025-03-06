@@ -9,10 +9,15 @@ import (
 	"time"
 
 	"github.com/VladimirKholomyanskyy/gym-api/internal/account"
+	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/auth"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/progress"
+	progresshandlers "github.com/VladimirKholomyanskyy/gym-api/internal/progress/handlers"
+	progressrepos "github.com/VladimirKholomyanskyy/gym-api/internal/progress/repository"
+	progressusecase "github.com/VladimirKholomyanskyy/gym-api/internal/progress/usecase"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/seed"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/training"
+	traininghandlers "github.com/VladimirKholomyanskyy/gym-api/internal/training/handlers"
+	trainingrepos "github.com/VladimirKholomyanskyy/gym-api/internal/training/repository"
+	trainingusecases "github.com/VladimirKholomyanskyy/gym-api/internal/training/usecase"
 	"github.com/joho/godotenv"
 
 	// _ "github.com/joho/godotenv/autoload"
@@ -21,13 +26,17 @@ import (
 )
 
 type Server struct {
-	port                   int
-	KeycloakMiddleware     *auth.KeycloakMiddleware
-	UserHandler            *account.UserHandler
-	ExerciseHandler        *training.ExerciseHandler
-	TrainingProgram        *training.TrainingProgramHandler
-	WorkoutExerciseHandler *training.WorkoutExerciseHandler
-	WorkoutLogsHandler     *progress.WorkoutProgressHandler
+	port                     int
+	KeycloakMiddleware       *auth.KeycloakMiddleware
+	ProfilesHandler          openapi.ProfileAPIServicer
+	SettingsHandler          openapi.SettingsAPIServicer
+	TrainingProgramsHandler  openapi.TrainingProgramsAPIServicer
+	WorkoutsHandler          openapi.WorkoutsAPIServicer
+	WorkoutExercisesHandler  openapi.WorkoutExercisesAPIServicer
+	ExercisesHandler         openapi.ExercisesAPIServicer
+	ScheduledWorkoutsHandler openapi.ScheduledWorkoutsAPIServicer
+	WorkoutSessionsHandler   openapi.WorkoutSessionsAPIServicer
+	ExerciseLogsHandler      openapi.ExerciseLogsAPIServicer
 }
 
 func NewServer() *http.Server {
@@ -52,45 +61,59 @@ func NewServer() *http.Server {
 	}
 
 	// Initializing data layer
-	userRepo := account.NewUserRepository(db)
-	exerciseRepo := training.NewExerciseRepository(db)
-	trainingProgramRepo := training.NewTrainingProgramRepository(db)
-	workoutRepo := training.NewWorkoutRepository(db)
-	workoutExerciseRepo := training.NewWorkoutExerciseRepository(db)
-	workoutSessionRepo := progress.NewWorkoutLogRepository(db)
-	exerciseLogsRepo := progress.NewExerciseLogRepository(db)
+	profilesRepo := account.NewProfileRepository(db)
+	settingsRepo := account.NewSettingRepository(db)
+	trainingProgramRepo := trainingrepos.NewTrainingProgramRepository(db)
+	workoutRepo := trainingrepos.NewWorkoutRepository(db)
+	workoutExerciseRepo := trainingrepos.NewWorkoutExerciseRepository(db)
+	exerciseRepo := trainingrepos.NewExerciseRepository(db)
+	scheduledWorkoutsRepo := trainingrepos.NewScheduledWorkoutRepository(db)
+	workoutSessionRepo := progressrepos.NewWorkoutSessionRepository(db)
+	exerciseLogsRepo := progressrepos.NewExerciseLogRepository(db)
 
 	// Initializing service layer
-	userService := account.NewUserService(userRepo)
-	trainingProgramService := training.NewTrainingManager(trainingProgramRepo, workoutRepo, workoutExerciseRepo, exerciseRepo)
-	workoutProgressManager := progress.NewWorkoutProgressManager(trainingProgramService, workoutSessionRepo, exerciseLogsRepo)
-
+	authorization := auth.NewAuthorization(trainingProgramRepo, workoutRepo)
+	trainingProgramUseCase := trainingusecases.NewTrainingProgramUseCase(trainingProgramRepo)
+	workoutsUseCase := trainingusecases.NewWorkoutUseCase(workoutRepo, authorization)
+	workoutExercisesUseCase := trainingusecases.NewWorkoutExerciseUseCase(workoutExerciseRepo, authorization)
+	exercisesUseCase := trainingusecases.NewExerciseUseCase(exerciseRepo)
+	scheduledWorkoutsUseCase := trainingusecases.NewScheduledWorkoutUseCase(scheduledWorkoutsRepo, authorization)
+	workoutSessionsUseCases := progressusecase.NewWorkoutSessionUseCase(workoutSessionRepo, workoutsUseCase)
+	exerciseLogsUseCase := progressusecase.NewLogExerciseUseCase(exerciseLogsRepo, exercisesUseCase)
 	// Initializing application layer
-	userHandler := &account.UserHandler{Service: userService}
-	exerciseHandler := training.NewExerciseHandler(trainingProgramService)
-	trainingProgramHandler := training.NewTrainingProgramHandler(trainingProgramService)
-	workoutExerciseHandler := training.NewWorkoutExerciseHandler(trainingProgramService)
-	workoutLogsHandler := progress.NewWorkoutProgressHandler(workoutProgressManager)
+	profilesHandler := account.NewProfileHandler(profilesRepo)
+	settingsHandler := account.NewSettingsHandler(settingsRepo)
+	trainingProgramsHandler := traininghandlers.NewTrainingProgramHandler(trainingProgramUseCase)
+	workoutsHandler := traininghandlers.NewWorkoutHandler(workoutsUseCase)
+	workoutExercisesHandler := traininghandlers.NewWorkoutExerciseHandler(workoutExercisesUseCase)
+	exercisesHandler := traininghandlers.NewExerciseHandler(exercisesUseCase)
+	scheduledWorkoutsHandler := traininghandlers.NewScheduledWorkoutsHandler(scheduledWorkoutsUseCase)
+	workoutSessionsHandler := progresshandlers.NewWorkoutSessionHandler(workoutSessionsUseCases)
+	exerciseLogsHandler := progresshandlers.NewExerciseLogHandler(exerciseLogsUseCase)
 
-	dataSeed := seed.NewDatabaseSeed(exerciseRepo, workoutRepo, trainingProgramRepo, workoutExerciseRepo, userRepo)
+	dataSeed := seed.NewDatabaseSeed(exerciseRepo, workoutRepo, trainingProgramRepo, workoutExerciseRepo, profilesRepo, settingsRepo)
 	dataSeed.Seed()
 
 	client_id := os.Getenv("CLIENT_ID")
 	issuer := os.Getenv("ISSUER")
 
-	KeycloakMiddleware, err := auth.NewKeycloakMiddleware(userService, issuer, client_id)
+	KeycloakMiddleware, err := auth.NewKeycloakMiddleware(profilesRepo, issuer, client_id)
 	if err != nil {
 		log.Fatal("Failed to init keycloak")
 	}
 
 	NewServer := &Server{
-		port:                   port,
-		UserHandler:            userHandler,
-		ExerciseHandler:        exerciseHandler,
-		TrainingProgram:        trainingProgramHandler,
-		WorkoutExerciseHandler: workoutExerciseHandler,
-		KeycloakMiddleware:     KeycloakMiddleware,
-		WorkoutLogsHandler:     workoutLogsHandler,
+		port:                     port,
+		KeycloakMiddleware:       KeycloakMiddleware,
+		ProfilesHandler:          profilesHandler,
+		SettingsHandler:          settingsHandler,
+		TrainingProgramsHandler:  trainingProgramsHandler,
+		WorkoutsHandler:          workoutsHandler,
+		WorkoutExercisesHandler:  workoutExercisesHandler,
+		ExercisesHandler:         exercisesHandler,
+		ScheduledWorkoutsHandler: scheduledWorkoutsHandler,
+		WorkoutSessionsHandler:   workoutSessionsHandler,
+		ExerciseLogsHandler:      exerciseLogsHandler,
 	}
 
 	// Declare Server config

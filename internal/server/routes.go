@@ -9,43 +9,31 @@ import (
 	"github.com/rs/cors"
 )
 
-func (s *Server) RegisterRoutes2() http.Handler {
-	ExercisesAPIController := openapi.NewExercisesAPIController(s.ExerciseHandler)
-	TrainingProgramsAPIController := openapi.NewTrainingProgramsAPIController(s.TrainingProgram)
-	WorkoutsAPIController := openapi.NewWorkoutsAPIController(s.TrainingProgram)
-	WorkoutExercisesAPIController := openapi.NewWorkoutExercisesAPIController(s.WorkoutExerciseHandler)
-	WorkoutSessionsAPIController := openapi.NewWorkoutSessionsAPIController(s.WorkoutLogsHandler)
-
-	r := openapi.NewRouter(ExercisesAPIController, TrainingProgramsAPIController, WorkoutExercisesAPIController, WorkoutSessionsAPIController, WorkoutsAPIController)
-
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"}, // Allow specific origin
-		AllowedMethods:   []string{"GET", "PUT", "DELETE", "POST", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-	})
-
-	handler := c.Handler(s.KeycloakMiddleware.Authenticate(r))
-	return handler
-
-}
 func (s *Server) RegisterRoutes() http.Handler {
 	// Initialize controllers
-	ExercisesAPIController := openapi.NewExercisesAPIController(s.ExerciseHandler)
-	TrainingProgramsAPIController := openapi.NewTrainingProgramsAPIController(s.TrainingProgram)
-	WorkoutsAPIController := openapi.NewWorkoutsAPIController(s.TrainingProgram)
-	WorkoutExercisesAPIController := openapi.NewWorkoutExercisesAPIController(s.WorkoutExerciseHandler)
-	WorkoutSessionsAPIController := openapi.NewWorkoutSessionsAPIController(s.WorkoutLogsHandler)
-	ExerciseLogsApiController := openapi.NewExerciseLogsAPIController(s.WorkoutLogsHandler)
+	ProfileAPIController := openapi.NewProfileAPIController(s.ProfilesHandler)
+	SettingsAPIController := openapi.NewSettingsAPIController(s.SettingsHandler)
+
+	TrainingProgramsAPIController := openapi.NewTrainingProgramsAPIController(s.TrainingProgramsHandler)
+	WorkoutsAPIController := openapi.NewWorkoutsAPIController(s.WorkoutsHandler)
+	WorkoutExercisesAPIController := openapi.NewWorkoutExercisesAPIController(s.WorkoutExercisesHandler)
+	ExercisesAPIController := openapi.NewExercisesAPIController(s.ExercisesHandler)
+	ScheduledWorkoutsAPIController := openapi.NewScheduledWorkoutsAPIController(s.ScheduledWorkoutsHandler)
+
+	WorkoutSessionsAPIController := openapi.NewWorkoutSessionsAPIController(s.WorkoutSessionsHandler)
+	ExerciseLogsApiController := openapi.NewExerciseLogsAPIController(s.ExerciseLogsHandler)
 
 	// Create a new router
 	router := mux.NewRouter()
 	r := openapi.NewRouter(
-		ExercisesAPIController,
+		ProfileAPIController,
+		SettingsAPIController,
 		TrainingProgramsAPIController,
-		WorkoutExercisesAPIController,
-		WorkoutSessionsAPIController,
 		WorkoutsAPIController,
+		WorkoutExercisesAPIController,
+		ExercisesAPIController,
+		ScheduledWorkoutsAPIController,
+		WorkoutSessionsAPIController,
 		ExerciseLogsApiController,
 	)
 	r.Use(s.KeycloakMiddleware.Authenticate)

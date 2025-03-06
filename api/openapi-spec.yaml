@@ -16,6 +16,8 @@ tags:
     description: Operations related to workout sessions
   - name: Exercise logs
     description: Operations related to logging progress
+  - name: Scheduled Workouts
+    description: Operations related to scheduling wokrouts
 paths:
   /api/exercises:
     get:
@@ -624,6 +626,115 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LogExerciseResponse"
+  /api/scheduled-workouts:
+    post:
+      summary: Schedule a workout
+      operationId: scheduleWorkout
+      tags:
+        - Scheduled Workouts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleWorkoutRequest"
+      responses:
+        "201":
+          description: Workout scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledWorkout"
+        "400":
+          description: Invalid request
+    get:
+      summary: Get all scheduled workouts for the authenticated user
+      operationId: getUserScheduledWorkouts
+      tags:
+        - Scheduled Workouts
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: List of scheduled workouts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduledWorkout"
+  /api/scheduled-workouts/{id}:
+    get:
+      summary: Get a scheduled workout by ID
+      operationId: getScheduledWorkout
+      tags:
+        - Scheduled Workouts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Scheduled workout details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledWorkout"
+        "404":
+          description: Scheduled workout not found
+    put:
+      summary: Update a scheduled workout
+      operationId: updateScheduledWorkout
+      tags:
+        - Scheduled Workouts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateScheduledWorkoutRequest"
+      responses:
+        "200":
+          description: Workout updated successfully
+        "400":
+          description: Invalid request
+        "404":
+          description: Scheduled workout not found
+    delete:
+      summary: Delete a scheduled workout
+      operationId: deleteScheduledWorkout
+      tags:
+        - Scheduled Workouts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Workout deleted successfully
+        "404":
+          description: Scheduled workout not found
 
 components:
   schemas:
@@ -939,6 +1050,47 @@ components:
               totalWeight:
                 type: number
                 format: float
+    ScheduleWorkoutRequest:
+      type: object
+      required:
+        - workoutId
+        - date
+      properties:
+        workoutId:
+          type: string
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+    UpdateScheduledWorkoutRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+    ScheduledWorkout:
+      type: object
+      properties:
+        id:
+          type: string
+        workoutId:
+          type: string
+        userId:
+          type: string
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
   securitySchemes:
     bearerAuth: # arbitrary name for the security scheme
       type: http
