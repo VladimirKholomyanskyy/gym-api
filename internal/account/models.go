@@ -8,26 +8,26 @@ import (
 )
 
 type Profile struct {
-	ID         string `gorm:"primaryKey"`
-	ExternalID string `gorm:"uniqueIndex"`
+	ID         string `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	ExternalID string `gorm:"uniqueIndex;not null"`
 	Sex        *openapi.Sex
 	Birthday   *time.Time
-	Weight     *float64       // Stored in kg
-	Height     *float64       // Stored in meters
-	AvatarURL  *string        // Missing from original model
-	CreatedAt  time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt  time.Time      `gorm:"autoUpdateTime"`
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	Weight     *float64
+	Height     *float64
+	AvatarURL  *string
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
+	DeletedAt  gorm.DeletedAt
 }
 
 type Setting struct {
-	ID                   string                   `gorm:"primaryKey"`
-	ProfileID            string                   `gorm:"index"`
-	Language             string                   `gorm:"default:'en'"`
-	MeasurementUnits     openapi.MeasurementUnits `gorm:"default:'metric'"`
-	Timezone             string                   `gorm:"default:'UTC'"`
-	NotificationsEnabled bool                     `gorm:"default:true"`
-	CreatedAt            time.Time                `gorm:"autoCreateTime"`
-	UpdatedAt            time.Time                `gorm:"autoUpdateTime"`
-	DeletedAt            gorm.DeletedAt           `gorm:"index"`
+	ID                   string `gorm:"primaryKey"`
+	ProfileID            string
+	Language             string
+	MeasurementUnits     openapi.MeasurementUnits
+	Timezone             string
+	NotificationsEnabled bool
+	CreatedAt            time.Time `gorm:"autoCreateTime"`
+	UpdatedAt            time.Time `gorm:"autoUpdateTime"`
+	DeletedAt            gorm.DeletedAt
 }

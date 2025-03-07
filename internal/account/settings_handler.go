@@ -22,12 +22,12 @@ func (h *settingsHandler) GetSettings(ctx context.Context) (openapi.ImplResponse
 	if err != nil {
 		return common.ErrorResponse(http.StatusUnauthorized, openapi.UNAUTHORIZED, err.Error())
 	}
-	settings, err := h.settingsRepo.GetByUserID(ctx, profileID)
+	settings, err := h.settingsRepo.GetByProfileID(ctx, profileID)
 	if err != nil {
+		if err == common.ErrEntityNotFound {
+			return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User settings not found")
+		}
 		return common.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch user settings")
-	}
-	if settings == nil {
-		return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User settings not found")
 	}
 
 	return openapi.Response(http.StatusOK, ConvertSettingToOpenAPI(settings)), nil
@@ -37,12 +37,12 @@ func (h *settingsHandler) UpdateSettings(ctx context.Context, request openapi.Pa
 	if err != nil {
 		return common.ErrorResponse(http.StatusUnauthorized, openapi.UNAUTHORIZED, err.Error())
 	}
-	settings, err := h.settingsRepo.GetByUserID(ctx, profileID)
+	settings, err := h.settingsRepo.GetByProfileID(ctx, profileID)
 	if err != nil {
+		if err == common.ErrEntityNotFound {
+			return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User settings not found")
+		}
 		return common.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch user settings")
-	}
-	if settings == nil {
-		return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User settings not found")
 	}
 
 	if request.Language != nil {

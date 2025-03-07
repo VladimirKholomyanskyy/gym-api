@@ -7,6 +7,7 @@ var (
 	ErrProgramNotFound = errors.New("training program not found")
 	ErrUnauthorized    = errors.New("invalid or missing profile ID")
 	ErrInvalidUUID     = errors.New("invalid UUID format")
+	ErrEntityNotFound  = errors.New("requested entity not found")
 )
 
 type NotFoundError struct {

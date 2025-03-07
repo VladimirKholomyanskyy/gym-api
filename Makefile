@@ -24,15 +24,17 @@ docker-run:
 docker-down:
 	@docker compose down
 
-# Test the application
-test:
-	@echo "Testing..."
-	@go test ./... -v
+# Run all tests
+test: test-unit test-integration
 
-# Integration Tests
-itest:
-	@echo "Running integration tests..."
-	@go test ./internal/database -v
+# Run unit tests only (no external dependencies)
+test-unit:
+	go test -v ./... -short
+
+# Run integration tests
+test-integration:
+	go test -v ./internal/account -run TestProfileRepository
+
 
 # Clean the binary
 clean:

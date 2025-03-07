@@ -24,10 +24,10 @@ func (h *profileHandler) GetProfile(ctx context.Context) (openapi.ImplResponse, 
 
 	profile, err := h.profileRepo.GetByID(ctx, profileID)
 	if err != nil {
+		if err == common.ErrEntityNotFound {
+			return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User profile not found")
+		}
 		return common.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch user profile")
-	}
-	if profile == nil {
-		return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User profile not found")
 	}
 
 	return openapi.Response(http.StatusOK, ConvertProfileToOpenAPI(profile)), nil
@@ -41,10 +41,10 @@ func (h *profileHandler) UpdateProfile(ctx context.Context, request openapi.Patc
 
 	profile, err := h.profileRepo.GetByID(ctx, profileID)
 	if err != nil {
+		if err == common.ErrEntityNotFound {
+			return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User profile not found")
+		}
 		return common.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch user profile")
-	}
-	if profile == nil {
-		return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "User profile not found")
 	}
 
 	if request.AvatarUrl != nil {
