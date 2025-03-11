@@ -3,21 +3,11 @@ package repository
 import (
 	"context"
 	"errors"
-	"strings"
+	"fmt"
 
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/training/model"
 	"gorm.io/gorm"
-)
-
-var (
-	// ErrTrainingProgramNotFound is returned when a training program cannot be found
-	ErrTrainingProgramNotFound = errors.New("training program not found")
-
-	// ErrTrainingProgramCreate is returned when there's an issue creating a training program
-	ErrTrainingProgramCreate = errors.New("failed to create training program")
-
-	// ErrTrainingProgramUpdate is returned when there's an issue updating a training program
-	ErrTrainingProgramUpdate = errors.New("failed to update training program")
 )
 
 // TrainingProgramRepository defines the interface for training program operations
@@ -26,8 +16,9 @@ type TrainingProgramRepository interface {
 	FindByID(ctx context.Context, id string) (*model.TrainingProgram, error)
 	FindByIDAndProfileID(ctx context.Context, programID, profileID string) (*model.TrainingProgram, error)
 	FindByProfileID(ctx context.Context, profileID string, page, pageSize int) ([]model.TrainingProgram, int64, error)
-	Update(ctx context.Context, trainingProgram *model.TrainingProgram) error
-	SoftDelete(ctx context.Context, programID, profileID string) error
+	UpdatePartial(ctx context.Context, id string, updates map[string]any) (*model.TrainingProgram, error)
+	Delete(ctx context.Context, id string) error
+	PermanentDelete(ctx context.Context, id string) error
 }
 
 // trainingProgramRepository implements TrainingProgramRepository
@@ -40,59 +31,29 @@ func NewTrainingProgramRepository(db *gorm.DB) TrainingProgramRepository {
 	return &trainingProgramRepository{db: db}
 }
 
-// validateTrainingProgram performs validation checks on the training program
-func validateTrainingProgram(trainingProgram *model.TrainingProgram) error {
-	// Trim and validate name
-	trainingProgram.Name = strings.TrimSpace(trainingProgram.Name)
-	if trainingProgram.Name == "" {
-		return errors.New("training program name cannot be empty")
-	}
-
-	// Validate profile ID
-	if strings.TrimSpace(trainingProgram.ProfileID) == "" {
-		return errors.New("profile ID cannot be empty")
-	}
-
-	return nil
-}
-
 // Create inserts a new training program into the database
 func (r *trainingProgramRepository) Create(ctx context.Context, trainingProgram *model.TrainingProgram) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Validate training program
-		if err := validateTrainingProgram(trainingProgram); err != nil {
-			return err
-		}
-
-		// Create the training program
-		if err := tx.Create(trainingProgram).Error; err != nil {
-			return errors.Join(ErrTrainingProgramCreate, err)
-		}
-		return nil
-	})
+	if err := r.db.WithContext(ctx).Create(trainingProgram).Error; err != nil {
+		return fmt.Errorf("failed to create training program: %w", err)
+	}
+	return nil
 }
 
 // FindByID retrieves a training program by its ID
 func (r *trainingProgramRepository) FindByID(ctx context.Context, id string) (*model.TrainingProgram, error) {
 	var trainingProgram model.TrainingProgram
-	result := r.db.WithContext(ctx).First(&trainingProgram, "id = ?", id)
-
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, ErrTrainingProgramNotFound
+	err := r.db.WithContext(ctx).First(&trainingProgram, "id = ?", id).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, customerrors.ErrEntityNotFound
 		}
-		return nil, result.Error
+		return nil, fmt.Errorf("failed to fetch training program: %w", err)
 	}
-
 	return &trainingProgram, nil
 }
 
 // FindByProfileID retrieves paginated training programs belonging to a user
 func (r *trainingProgramRepository) FindByProfileID(ctx context.Context, profileID string, page, pageSize int) ([]model.TrainingProgram, int64, error) {
-	if err := validatePagination(page, pageSize); err != nil {
-		return nil, 0, err
-	}
-
 	var trainingPrograms []model.TrainingProgram
 	var total int64
 	offset := (page - 1) * pageSize
@@ -102,18 +63,21 @@ func (r *trainingProgramRepository) FindByProfileID(ctx context.Context, profile
 		Model(&model.TrainingProgram{}).
 		Where("profile_id = ?", profileID)
 	if err := countQuery.Count(&total).Error; err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to count training programs: %w", err)
 	}
 
 	// Fetch paginated results
-	result := r.db.WithContext(ctx).
+	err := r.db.WithContext(ctx).
 		Where("profile_id = ?", profileID).
 		Limit(pageSize).
 		Offset(offset).
 		Order("created_at DESC").
-		Find(&trainingPrograms)
+		Find(&trainingPrograms).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch training programs: %w", err)
+	}
 
-	return trainingPrograms, total, result.Error
+	return trainingPrograms, total, nil
 }
 
 // FindByIDAndProfileID retrieves a training program by its ID and profile ID
@@ -125,54 +89,55 @@ func (r *trainingProgramRepository) FindByIDAndProfileID(ctx context.Context, pr
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, ErrTrainingProgramNotFound
+			return nil, customerrors.ErrEntityNotFound
 		}
-		return nil, result.Error
+		return nil, fmt.Errorf("failed to fetch training program: %w", result.Error)
 	}
 
 	return &trainingProgram, nil
 }
 
-// Update modifies an existing training program
-func (r *trainingProgramRepository) Update(ctx context.Context, trainingProgram *model.TrainingProgram) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Validate training program
-		if err := validateTrainingProgram(trainingProgram); err != nil {
-			return err
-		}
+func (r *trainingProgramRepository) UpdatePartial(ctx context.Context, id string, updates map[string]any) (*model.TrainingProgram, error) {
+	result := r.db.WithContext(ctx).Model(&model.TrainingProgram{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to update training program: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, customerrors.ErrEntityNotFound
+	}
+	var updatedProgram model.TrainingProgram
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&updatedProgram).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch updated training program: %w", err)
+	}
 
-		// Selective update of fields
-		result := tx.Model(trainingProgram).
-			Select("name", "description", "duration", "difficulty_level").
-			Save(trainingProgram)
-
-		if result.Error != nil {
-			return errors.Join(ErrTrainingProgramUpdate, result.Error)
-		}
-
-		// Check if any rows were actually updated
-		if result.RowsAffected == 0 {
-			return ErrTrainingProgramNotFound
-		}
-
-		return nil
-	})
+	return &updatedProgram, nil
 }
 
 // SoftDelete removes a training program, ensuring it belongs to the user
-func (r *trainingProgramRepository) SoftDelete(ctx context.Context, programID, profileID string) error {
+func (r *trainingProgramRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).
-		Where("id = ? AND profile_id = ?", programID, profileID).
+		Where("id = ?", id).
 		Delete(&model.TrainingProgram{})
 
 	if result.Error != nil {
-		return result.Error
+		return fmt.Errorf("failed to delete profile: %w", result.Error)
 	}
 
 	// Check if any rows were actually deleted
 	if result.RowsAffected == 0 {
-		return ErrTrainingProgramNotFound
+		return customerrors.ErrEntityNotFound
 	}
 
+	return nil
+}
+
+func (r *trainingProgramRepository) PermanentDelete(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Unscoped().Where("id = ?", id).Delete(&model.TrainingProgram{})
+	if result.Error != nil {
+		return fmt.Errorf("failed to permanently delete profile: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return customerrors.ErrEntityNotFound
+	}
 	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +13,7 @@ type SettingRepository interface {
 	Create(ctx context.Context, setting *Setting) error
 	GetByID(ctx context.Context, id string) (*Setting, error)
 	GetByProfileID(ctx context.Context, id string) (*Setting, error)
-	Update(ctx context.Context, setting *Setting) error
+	UpdatePartial(ctx context.Context, id string, updates map[string]any) error
 	Delete(ctx context.Context, id string) error
 	PermanentDelete(ctx context.Context, id string) error
 }
@@ -42,9 +42,9 @@ func (r *settingRepository) GetByID(ctx context.Context, id string) (*Setting, e
 	err := r.db.WithContext(ctx).First(&setting, "id = ?", id).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, common.ErrEntityNotFound
+			return nil, customerrors.ErrEntityNotFound
 		}
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch by settings by id: %w", err)
 	}
 	return &setting, nil
 }
@@ -54,21 +54,22 @@ func (r *settingRepository) GetByProfileID(ctx context.Context, id string) (*Set
 	err := r.db.WithContext(ctx).Where("profile_id = ?", id).First(&settings).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, common.ErrEntityNotFound
+			return nil, customerrors.ErrEntityNotFound
 		}
 		return nil, fmt.Errorf("failed to find settings by profile ID: %w", err)
 	}
 	return &settings, nil
 }
 
-// Update modifies an existing setting.
-func (r *settingRepository) Update(ctx context.Context, setting *Setting) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(setting).Error; err != nil {
-			return fmt.Errorf("failed to update settings: %w", err)
-		}
-		return nil
-	})
+func (r *settingRepository) UpdatePartial(ctx context.Context, id string, updates map[string]any) error {
+	result := r.db.WithContext(ctx).Model(&Setting{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update settings: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return customerrors.ErrEntityNotFound
+	}
+	return nil
 }
 
 // Delete removes a setting by ID.
@@ -78,7 +79,7 @@ func (r *settingRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete settings: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return common.ErrEntityNotFound
+		return customerrors.ErrEntityNotFound
 	}
 	return nil
 }
@@ -89,7 +90,7 @@ func (r *settingRepository) PermanentDelete(ctx context.Context, id string) erro
 		return fmt.Errorf("failed to permanent delete settings: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return common.ErrEntityNotFound
+		return customerrors.ErrEntityNotFound
 	}
 	return nil
 }

@@ -2,12 +2,12 @@ package account
 
 import (
 	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/utils"
 )
 
 // ConvertProfileToOpenAPI converts a GORM Profile model to an OpenAPI Profile model
 func ConvertProfileToOpenAPI(profile *Profile) openapi.Profile {
-	converted := common.FormatTime(profile.Birthday)
+	converted := utils.FormatTime(profile.Birthday)
 	return openapi.Profile{
 		Id:        profile.ID,
 		Sex:       profile.Sex,

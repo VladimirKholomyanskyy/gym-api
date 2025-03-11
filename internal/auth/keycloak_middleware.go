@@ -65,7 +65,7 @@ func (km *KeycloakMiddleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		profile, err := km.profileRepo.FindByExternalID(r.Context(), claims.Sub)
+		profile, err := km.profileRepo.GetByExternalID(r.Context(), claims.Sub)
 		if err != nil {
 			log.Println("User profile doesn't exist, creating a new one.")
 			profile = &account.Profile{ExternalID: claims.Sub}

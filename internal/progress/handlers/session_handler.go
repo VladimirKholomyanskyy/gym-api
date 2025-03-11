@@ -7,6 +7,7 @@ import (
 	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
 	usecase "github.com/VladimirKholomyanskyy/gym-api/internal/progress/usecase"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/utils"
 )
 
 type workoutSessionHandler struct {
@@ -21,15 +22,18 @@ func NewWorkoutSessionHandler(useCase usecase.WorkoutSessionUseCase) openapi.Wor
 func (h *workoutSessionHandler) GetWorkoutSession(ctx context.Context, workoutSessionId string) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+	}
+	if !common.IsUUIDValid(workoutSessionId) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "workout session id is not valid")
 	}
 	session, err := h.useCase.GetByID(ctx, profileId, workoutSessionId)
 	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch workout session")
 	}
-	snapshot, err := common.ConverWorkoutSnapshot(&session.Snapshot)
+	snapshot, err := utils.ConverWorkoutSnapshot(&session.Snapshot)
 	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to unmarshall workout snapshout")
 	}
 	if session.CompletedAt != nil {
 		return openapi.Response(http.StatusOK, openapi.WorkoutSession{
@@ -49,7 +53,7 @@ func (h *workoutSessionHandler) GetWorkoutSession(ctx context.Context, workoutSe
 func (h *workoutSessionHandler) ListWorkoutSessions(ctx context.Context, page, pageSize int32) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
 	sessions, totalCount, err := h.useCase.List(ctx, profileId, int(page), int(pageSize))
 	if err != nil {
@@ -57,7 +61,7 @@ func (h *workoutSessionHandler) ListWorkoutSessions(ctx context.Context, page, p
 	}
 	var convertedSessions []openapi.WorkoutSession
 	for _, session := range sessions {
-		snapshot, err := common.ConverWorkoutSnapshot(&session.Snapshot)
+		snapshot, err := utils.ConverWorkoutSnapshot(&session.Snapshot)
 		if err != nil {
 			return openapi.Response(http.StatusInternalServerError, nil), nil
 		}
@@ -83,7 +87,7 @@ func (h *workoutSessionHandler) ListWorkoutSessions(ctx context.Context, page, p
 			TotalItems:  int32(totalCount),
 			CurrentPage: page,
 			PageSize:    pageSize,
-			TotalPages:  common.CalculateTotalPages(totalCount, pageSize),
+			TotalPages:  utils.CalculateTotalPages(totalCount, pageSize),
 			Items:       convertedSessions}), nil
 
 }
@@ -91,13 +95,13 @@ func (h *workoutSessionHandler) ListWorkoutSessions(ctx context.Context, page, p
 func (s *workoutSessionHandler) AddWorkoutSession(ctx context.Context, startWorkoutSessionRequest openapi.CreateWorkoutSessionRequest) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
 	workoutSession, err := s.useCase.StartWorkout(ctx, profileId, startWorkoutSessionRequest)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, nil), nil
 	}
-	snapshot, err := common.ConverWorkoutSnapshot(&workoutSession.Snapshot)
+	snapshot, err := utils.ConverWorkoutSnapshot(&workoutSession.Snapshot)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, nil), nil
 	}
@@ -112,7 +116,7 @@ func (s *workoutSessionHandler) AddWorkoutSession(ctx context.Context, startWork
 func (h *workoutSessionHandler) CompleteWorkoutSession(ctx context.Context, workoutSessionId string) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
 
 	workoutSession, err := h.useCase.CompleteWorkout(ctx, profileId, workoutSessionId)
@@ -120,7 +124,7 @@ func (h *workoutSessionHandler) CompleteWorkoutSession(ctx context.Context, work
 		return openapi.Response(http.StatusInternalServerError, nil), nil
 	}
 
-	snapshot, err := common.ConverWorkoutSnapshot(&workoutSession.Snapshot)
+	snapshot, err := utils.ConverWorkoutSnapshot(&workoutSession.Snapshot)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, nil), nil
 	}

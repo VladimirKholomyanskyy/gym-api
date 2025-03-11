@@ -6,7 +6,10 @@ import (
 
 	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/training/model"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/training/usecase"
+	"github.com/VladimirKholomyanskyy/gym-api/internal/utils"
 )
 
 type scheduledWorkoutsHandler struct {
@@ -17,29 +20,55 @@ func NewScheduledWorkoutsHandler(useCase usecase.ScheduledWorkoutUseCase) openap
 	return &scheduledWorkoutsHandler{useCase: useCase}
 }
 
+func (h *scheduledWorkoutsHandler) ScheduleWorkout(ctx context.Context, request openapi.CreateScheduledWorkoutRequest) (openapi.ImplResponse, error) {
+	profileId, err := common.ExtractProfileID(ctx)
+	if err != nil {
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+	}
+	if common.IsUUIDValid(request.WorkoutId) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
+	}
+	input := model.CreateScheduledWorkoutInput{ProfileID: profileId, WorkoutID: request.WorkoutId}
+	date, err := utils.ParseTime(request.Date)
+	if err != nil {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_FORMAT, "Invalid date format")
+	}
+	input.Date = date
+	if request.Notes != nil {
+		input.Notes = utils.TrimPointer(request.Notes)
+	}
+	scheduledWorkout, err := h.useCase.Create(ctx, input)
+	if err != nil {
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to schedule workout")
+	}
+	return openapi.Response(http.StatusCreated, utils.ConvertScheduledWorkout(scheduledWorkout)), nil
+}
+
 func (h *scheduledWorkoutsHandler) GetScheduledWorkouts(ctx context.Context, startDate string, endDate string, page, pageSize int32) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if !isPageValid(page) {
-		return common.ErrorResponse(http.StatusBadRequest, openapi.INVALID_PAGE_NUMBER, "page must be greater than 0")
+	if !common.IsPageValid(page) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_PAGE_NUMBER, "page must be greater than 0")
 	}
-	if !isPageSizeValid(pageSize) {
-		return common.ErrorResponse(http.StatusBadRequest, openapi.INVALID_PAGE_SIZE, "pageSize must be between 1 and 100")
+	if !common.IsPageSizeValid(pageSize) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_PAGE_SIZE, "pageSize must be between 1 and 100")
 	}
-	startDateTime, err := common.ParseTime(startDate)
+	startDateTime, err := utils.ParseTime(startDate)
 	if err != nil {
-		return common.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_FORMAT, "Invalid startDate format")
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_FORMAT, "Invalid startDate format")
 	}
-	endDateTime, err := common.ParseTime(endDate)
+	endDateTime, err := utils.ParseTime(endDate)
 	if err != nil {
-		return common.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_FORMAT, "Invalid endDate format")
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_FORMAT, "Invalid endDate format")
 	}
-
+	if !startDateTime.Before(endDateTime) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_RANGE, "Invalid date range")
+	}
 	scheduledWorkouts, totalCount, err := h.useCase.List(ctx, profileId, startDateTime, endDateTime, int(page), int(pageSize))
 	if err != nil {
-		return common.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch scheduled workouts")
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch scheduled workouts")
 	}
 	return openapi.Response(
 		http.StatusOK,
@@ -47,59 +76,67 @@ func (h *scheduledWorkoutsHandler) GetScheduledWorkouts(ctx context.Context, sta
 			TotalItems:  int32(totalCount),
 			CurrentPage: page,
 			PageSize:    pageSize,
-			TotalPages:  common.CalculateTotalPages(totalCount, pageSize),
-			Items:       common.ConvertScheduledWorkouts(scheduledWorkouts)}), nil
-}
-
-func (h *scheduledWorkoutsHandler) ScheduleWorkout(ctx context.Context, request openapi.CreateScheduledWorkoutRequest) (openapi.ImplResponse, error) {
-	profileId, err := common.ExtractProfileID(ctx)
-	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
-	}
-	if isUUIDValid(request.WorkoutId) {
-		return common.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "workout ID is not a valid UUID")
-	}
-	scheduledWorkout, err := h.useCase.Create(ctx, profileId, request)
-	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
-	}
-	return openapi.Response(http.StatusCreated, common.ConvertScheduledWorkout(scheduledWorkout)), nil
+			TotalPages:  utils.CalculateTotalPages(totalCount, pageSize),
+			Items:       utils.ConvertScheduledWorkouts(scheduledWorkouts)}), nil
 }
 
 func (h *scheduledWorkoutsHandler) GetScheduledWorkout(ctx context.Context, id string) (openapi.ImplResponse, error) {
-	profileId, err := common.ExtractProfileID(ctx)
+	profileID, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	scheduledWorkout, err := h.useCase.GetByID(ctx, profileId, id)
+	scheduledWorkout, err := h.useCase.GetByID(ctx, profileID, id)
 	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to fetch scheduled workout")
 	}
-	return openapi.Response(http.StatusCreated, common.ConvertScheduledWorkout(scheduledWorkout)), nil
+	return openapi.Response(http.StatusCreated, utils.ConvertScheduledWorkout(scheduledWorkout)), nil
 }
 
 func (h *scheduledWorkoutsHandler) UpdateScheduledWorkout(ctx context.Context, id string, request openapi.PatchScheduledWorkoutRequest) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-
-	scheduledWorkout, err := h.useCase.Update(ctx, profileId, id, request)
+	if !common.IsUUIDValid(id) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Invalid scheduled workout id")
+	}
+	input := model.UpdateScheduledWorkoutInput{ProfileID: profileId, ScheduledWorkoutID: id}
+	if request.Date != nil {
+		date, err := utils.ParseTime(*request.Date)
+		if err != nil {
+			return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_DATE_FORMAT, "Invalid date format")
+		}
+		input.Date = &date
+	}
+	if request.Notes != nil {
+		trimmedNotes := utils.TrimPointer(request.Notes)
+		input.Notes = &trimmedNotes
+	}
+	scheduledWorkout, err := h.useCase.Update(ctx, input)
 	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
+		if err == customerrors.ErrAccessForbidden {
+			return utils.ErrorResponse(http.StatusForbidden, openapi.FORBIDDEN, err.Error())
+		}
+		if err == customerrors.ErrEntityNotFound {
+			return utils.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "Scheduled workout not found")
+		}
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to update scheduled workout")
 	}
-	return openapi.Response(http.StatusCreated, common.ConvertScheduledWorkout(scheduledWorkout)), nil
+	return openapi.Response(http.StatusCreated, utils.ConvertScheduledWorkout(scheduledWorkout)), nil
 
 }
 
 func (h *scheduledWorkoutsHandler) DeleteScheduledWorkout(ctx context.Context, id string) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+	}
+	if !common.IsUUIDValid(id) {
+		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Invalid scheduled workout id")
 	}
 	err = h.useCase.Delete(ctx, profileId, id)
 	if err != nil {
-		return openapi.Response(http.StatusInternalServerError, nil), nil
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, "Failed to delete scheduled workout")
 	}
 	return openapi.Response(http.StatusNoContent, nil), nil
 }
@@ -108,14 +145,14 @@ func (h *scheduledWorkoutsHandler) DeleteScheduledWorkout(ctx context.Context, i
 func (h *scheduledWorkoutsHandler) GetNextScheduledWorkout(ctx context.Context) (openapi.ImplResponse, error) {
 	profileId, err := common.ExtractProfileID(ctx)
 	if err != nil {
-		return common.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
+		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
 	scheduledWorkout, err := h.useCase.GetUpcommingScheduledWorkout(ctx, profileId)
 	if err != nil {
-		return common.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, err.Error())
+		if err == customerrors.ErrEntityNotFound {
+			return utils.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "Scheduled workout not found")
+		}
+		return utils.ErrorResponse(http.StatusInternalServerError, openapi.INTERNAL_SERVER_ERROR, err.Error())
 	}
-	if scheduledWorkout == nil {
-		return common.ErrorResponse(http.StatusNotFound, openapi.RESOURCE_NOT_FOUND, "No upcomming workouts found")
-	}
-	return openapi.Response(http.StatusOK, common.ConvertScheduledWorkout(scheduledWorkout)), nil
+	return openapi.Response(http.StatusOK, utils.ConvertScheduledWorkout(scheduledWorkout)), nil
 }

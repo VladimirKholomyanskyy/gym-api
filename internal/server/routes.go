@@ -45,7 +45,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Serve OpenAPI YAML file
 	router.HandleFunc("/swagger-ui/doc.yaml", func(w http.ResponseWriter, r *http.Request) {
-		filePath := "../../api/openapi-spec.yaml"
+		filePath := "../../api-contracts/openapi/v1/spec.yaml"
 		log.Println("Serving OpenAPI YAML from:", filePath) // Debugging the file path
 		http.ServeFile(w, r, filePath)
 	}).Methods("GET")

@@ -1,4 +1,4 @@
-package common
+package utils
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
 	model "github.com/VladimirKholomyanskyy/gym-api/internal/training/model"
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
@@ -49,7 +50,7 @@ func CalculateTotalPages(totalRecords int64, pageSize int32) int32 {
 func ValidateUUIDs(ids ...string) error {
 	for _, id := range ids {
 		if _, err := uuid.Parse(id); err != nil {
-			return fmt.Errorf("%w: %s", ErrInvalidUUID, id)
+			return fmt.Errorf("%w: %s", customerrors.ErrInvalidUUID, id)
 		}
 	}
 	return nil

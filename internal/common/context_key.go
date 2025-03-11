@@ -1,6 +1,10 @@
 package common
 
-import "context"
+import (
+	"context"
+
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
+)
 
 type ProfileID string
 
@@ -10,7 +14,7 @@ const ProfileIDKey ProfileID = "ProfileID"
 func ExtractProfileID(ctx context.Context) (string, error) {
 	profileID, ok := ctx.Value(ProfileIDKey).(string)
 	if !ok || profileID == "" {
-		return "", ErrUnauthorized
+		return "", customerrors.ErrUnauthorized
 	}
 	return profileID, nil
 }

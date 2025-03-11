@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 type WorkoutSession struct {
@@ -24,7 +25,9 @@ type ExerciseLog struct {
 	SetNumber  int       `gorm:"not null;check:set_number > 0" json:"set_number"`
 	Reps       int       `gorm:"not null;check:reps >= 0" json:"reps"`
 	Weight     float64   `gorm:"type:decimal(5,2);not null;check:weight >= 0" json:"weight"`
-	LoggedAt   time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"logged_at"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime"`
+	DeletedAt  gorm.DeletedAt
 }
 
 type WeightPerDay struct {

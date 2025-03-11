@@ -7,7 +7,7 @@ import (
 	"time"
 
 	openapi "github.com/VladimirKholomyanskyy/gym-api/internal/api/go"
-	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/progress/model"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/progress/repository"
 	training "github.com/VladimirKholomyanskyy/gym-api/internal/training/usecase"
@@ -32,6 +32,9 @@ func NewWorkoutSessionUseCase(repo repository.WorkoutSessionRepository,
 
 func (uc *workoutSessionUseCase) StartWorkout(ctx context.Context, profileID string, input openapi.CreateWorkoutSessionRequest) (*model.WorkoutSession, error) {
 	workout, err := uc.workoutUseCase.GetByWorkoutID(ctx, profileID, input.WorkoutId)
+	if err != nil {
+		return nil, err
+	}
 	jsonData, err := json.Marshal(workout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal workout: %w", err)
@@ -50,14 +53,12 @@ func (uc *workoutSessionUseCase) CompleteWorkout(ctx context.Context, profileID,
 		return nil, err
 	}
 	if session.ProfileID != profileID {
-		return nil, common.ErrAccessForbidden
+		return nil, customerrors.ErrAccessForbidden
 	}
 	if session.CompletedAt == nil {
-		return nil, common.NewForbiddenError("workout is completed")
+		return nil, customerrors.ErrAccessForbidden
 	}
-	currnetTime := time.Now()
-	session.CompletedAt = &currnetTime
-	err = uc.repo.Update(ctx, session)
+	err = uc.repo.UpdatePartial(ctx, session.ID, map[string]any{"completed_at": time.Now()})
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +67,7 @@ func (uc *workoutSessionUseCase) CompleteWorkout(ctx context.Context, profileID,
 }
 
 func (uc *workoutSessionUseCase) List(ctx context.Context, profileID string, page, pageSize int) ([]model.WorkoutSession, int64, error) {
-	sessions, totalCount, err := uc.repo.GetAllByProfileID(ctx, profileID, page, pageSize)
-	if err != nil {
-		return nil, 0, err
-	}
-	return sessions, totalCount, err
+	return uc.repo.GetAllByProfileID(ctx, profileID, page, pageSize)
 }
 
 func (uc *workoutSessionUseCase) GetByID(ctx context.Context, profileID, sessionID string) (*model.WorkoutSession, error) {
@@ -79,7 +76,7 @@ func (uc *workoutSessionUseCase) GetByID(ctx context.Context, profileID, session
 		return nil, err
 	}
 	if session.ProfileID != profileID {
-		return nil, common.ErrAccessForbidden
+		return nil, customerrors.ErrAccessForbidden
 	}
 	return session, err
 }

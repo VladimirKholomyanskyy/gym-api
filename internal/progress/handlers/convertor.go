@@ -13,7 +13,7 @@ func convertExerciseLog(gormExerciseLog *model.ExerciseLog) *openapi.ExerciseLog
 		SetNumber:        int32(gormExerciseLog.SetNumber),
 		RepsCompleted:    int32(gormExerciseLog.Reps),
 		WeightUsed:       int32(gormExerciseLog.Weight),
-		LoggedAt:         gormExerciseLog.LoggedAt,
+		LoggedAt:         gormExerciseLog.UpdatedAt,
 	}
 
 }

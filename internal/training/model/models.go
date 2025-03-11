@@ -3,46 +3,39 @@ package model
 import (
 	"time"
 
+	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type TrainingProgram struct {
-	ID          string `gorm:"primaryKey"`
+	common.Base
 	Name        string
 	ProfileID   string
 	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt
 }
 
 type Workout struct {
-	ID                string `gorm:"primaryKey"`
+	common.Base
 	Name              string
 	TrainingProgramID string
 	Exercises         []WorkoutExercise `gorm:"constraint:OnDelete:CASCADE"`
 	Position          int
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	DeletedAt         gorm.DeletedAt
 }
 
 type WorkoutExercise struct {
-	ID         string `gorm:"primaryKey"`
+	common.Base
 	WorkoutID  string
 	ExerciseID string
 	Sets       int
 	Reps       int
 	Position   int
 	Exercise   Exercise `gorm:"constraint:OnDelete:CASCADE"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	DeletedAt  gorm.DeletedAt
 }
 
 type Exercise struct {
-	ID              string `gorm:"primaryKey"`
+	ID              string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name            string
 	PrimaryMuscle   string
 	SecondaryMuscle pq.StringArray `gorm:"type:text[]"` // PostgreSQL array type
@@ -50,14 +43,31 @@ type Exercise struct {
 	Description     string
 }
 
+// BeforeCreate will set a UUID rather than numeric ID.
+func (b *Exercise) BeforeCreate(tx *gorm.DB) (err error) {
+	b.ID = uuid.New().String()
+	return
+}
+
 type ScheduledWorkout struct {
-	ID        string `gorm:"primaryKey"`
+	common.Base
 	ProfileID string
 	WorkoutID string
 	Workout   Workout `gorm:"constraint:OnDelete:CASCADE;"`
 	Date      time.Time
 	Notes     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt
+}
+
+type CreateScheduledWorkoutInput struct {
+	ProfileID string
+	WorkoutID string
+	Date      time.Time
+	Notes     string
+}
+
+type UpdateScheduledWorkoutInput struct {
+	ScheduledWorkoutID string
+	ProfileID          string
+	Date               *time.Time
+	Notes              *string
 }

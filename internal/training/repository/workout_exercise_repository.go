@@ -2,25 +2,19 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	customerrors "github.com/VladimirKholomyanskyy/gym-api/internal/customErrors"
 	"github.com/VladimirKholomyanskyy/gym-api/internal/training/model"
 
 	"gorm.io/gorm"
 )
 
-var (
-	// Custom error types for more specific error handling
-	ErrWorkoutExerciseNotFound = errors.New("workout exercise not found")
-)
-
 type WorkoutExerciseRepository interface {
 	Create(ctx context.Context, exercise *model.WorkoutExercise) error
-	FindByID(ctx context.Context, id string) (*model.WorkoutExercise, error)
-	FindByWorkoutID(ctx context.Context, workoutID string, page, pageSize int) ([]model.WorkoutExercise, int64, error)
-	FindByExerciseID(ctx context.Context, exerciseID string) ([]model.WorkoutExercise, error)
-	Update(ctx context.Context, workoutExercise *model.WorkoutExercise) error
+	GetByID(ctx context.Context, id string) (*model.WorkoutExercise, error)
+	GetAllByWorkoutID(ctx context.Context, workoutID string, page, pageSize int) ([]model.WorkoutExercise, int64, error)
+	UpdatePartial(ctx context.Context, id string, updates map[string]any) (*model.WorkoutExercise, error)
 	Delete(ctx context.Context, id string) error
 	Reorder(ctx context.Context, workoutExerciseID string, newPosition int) error
 }
@@ -36,14 +30,7 @@ func NewWorkoutExerciseRepository(db *gorm.DB) WorkoutExerciseRepository {
 
 // Create inserts a new workout exercise into the database
 func (r *workoutExerciseRepository) Create(ctx context.Context, exercise *model.WorkoutExercise) error {
-	// Validate input
-	if exercise == nil {
-		return errors.New("workout exercise cannot be nil")
-	}
-
-	// Use a transaction to ensure atomic last position calculation
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Calculate the last position within the specific workout
 		var lastPosition int
 		err := tx.Model(&model.WorkoutExercise{}).
 			Where("workout_id = ?", exercise.WorkoutID).
@@ -52,33 +39,30 @@ func (r *workoutExerciseRepository) Create(ctx context.Context, exercise *model.
 		if err != nil {
 			return fmt.Errorf("failed to calculate last position: %w", err)
 		}
-
-		// Set the new position
 		exercise.Position = lastPosition + 1
-
-		// Create the exercise
-		return tx.Create(exercise).Error
+		if err := tx.Create(exercise).Error; err != nil {
+			return fmt.Errorf("failed to create workout exercise: %w", err)
+		}
+		return nil
 	})
 }
 
 // FindByID retrieves a workout exercise by its ID
-func (r *workoutExerciseRepository) FindByID(ctx context.Context, id string) (*model.WorkoutExercise, error) {
+func (r *workoutExerciseRepository) GetByID(ctx context.Context, id string) (*model.WorkoutExercise, error) {
 	var exercise model.WorkoutExercise
-	result := r.db.WithContext(ctx).First(&exercise, "id = ?", id)
-
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, ErrWorkoutExerciseNotFound
+	err := r.db.WithContext(ctx).First(&exercise, "id = ?", id).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, customerrors.ErrEntityNotFound
 		}
-		return nil, result.Error
+		return nil, fmt.Errorf("failed to fetch workout exercise: %w", err)
 	}
-
 	return &exercise, nil
 }
 
 // FindByWorkoutID retrieves all exercises associated with a given workout
 // Now returns the total count for pagination purposes
-func (r *workoutExerciseRepository) FindByWorkoutID(
+func (r *workoutExerciseRepository) GetAllByWorkoutID(
 	ctx context.Context,
 	workoutID string,
 	page,
@@ -86,27 +70,16 @@ func (r *workoutExerciseRepository) FindByWorkoutID(
 ) ([]model.WorkoutExercise, int64, error) {
 	var exercises []model.WorkoutExercise
 	var totalCount int64
-
-	// Validate pagination parameters
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10 // Default page size
-	}
-
 	offset := (page - 1) * pageSize
 
-	// Count total exercises for the workout
-	countResult := r.db.WithContext(ctx).
+	countErr := r.db.WithContext(ctx).
 		Model(&model.WorkoutExercise{}).
 		Where("workout_id = ?", workoutID).
-		Count(&totalCount)
-	if countResult.Error != nil {
-		return nil, 0, countResult.Error
+		Count(&totalCount).Error
+	if countErr != nil {
+		return nil, 0, fmt.Errorf("failed to count workouts exercises: %w", countErr)
 	}
 
-	// Fetch paginated exercises
 	err := r.db.WithContext(ctx).
 		Where("workout_id = ?", workoutID).
 		Order("position ASC").
@@ -115,56 +88,44 @@ func (r *workoutExerciseRepository) FindByWorkoutID(
 		Find(&exercises).Error
 
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to fetch workouts exercises: %w", err)
 	}
 
 	return exercises, totalCount, nil
 }
 
-// FindByExerciseID retrieves all instances of a specific exercise in any workout
-func (r *workoutExerciseRepository) FindByExerciseID(ctx context.Context, exerciseID string) ([]model.WorkoutExercise, error) {
-	var exercises []model.WorkoutExercise
-
-	result := r.db.WithContext(ctx).
-		Where("exercise_id = ?", exerciseID).
-		Find(&exercises)
-
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return exercises, nil
-}
-
 // Update modifies an existing workout exercise
-func (r *workoutExerciseRepository) Update(ctx context.Context, workoutExercise *model.WorkoutExercise) error {
-	// Validate input
-	if workoutExercise == nil {
-		return errors.New("workout exercise cannot be nil")
+func (r *workoutExerciseRepository) UpdatePartial(ctx context.Context, id string, updates map[string]any) (*model.WorkoutExercise, error) {
+	result := r.db.WithContext(ctx).Model(&model.WorkoutExercise{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to update workout exercise: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, customerrors.ErrEntityNotFound
+	}
+	var updatedWorkoutExercise model.WorkoutExercise
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&updatedWorkoutExercise).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch updated workout exercise: %w", err)
 	}
 
-	return r.db.WithContext(ctx).Save(workoutExercise).Error
+	return &updatedWorkoutExercise, nil
 }
 
 // Delete removes a workout exercise from the database
 func (r *workoutExerciseRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// First, get the workout exercise to ensure it exists and get its workout ID
 		var workoutExercise model.WorkoutExercise
 		if err := tx.First(&workoutExercise, "id = ?", id).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrWorkoutExerciseNotFound
+			if err == gorm.ErrRecordNotFound {
+				return customerrors.ErrEntityNotFound
 			}
-			return err
+			return fmt.Errorf("failed to fetch workout exercise: %w", err)
 		}
 
-		// Delete the exercise
-		result := tx.Delete(&model.WorkoutExercise{}, "id = ?", id)
-		if result.Error != nil {
-			return result.Error
+		if err := tx.Delete(&model.WorkoutExercise{}, "id = ?", id).Error; err != nil {
+			return fmt.Errorf("failed to delete workout exercise: %w", err)
 		}
 
-		// Reorder remaining exercises in the workout
 		return tx.Model(&model.WorkoutExercise{}).
 			Where("workout_id = ? AND position > ?", workoutExercise.WorkoutID, workoutExercise.Position).
 			Update("position", gorm.Expr("position - 1")).Error
@@ -177,13 +138,12 @@ func (r *workoutExerciseRepository) Reorder(ctx context.Context, workoutExercise
 		// Find the workout exercise
 		var workoutExercise model.WorkoutExercise
 		if err := tx.First(&workoutExercise, "id = ?", workoutExerciseID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrWorkoutExerciseNotFound
+			if err == gorm.ErrRecordNotFound {
+				return customerrors.ErrEntityNotFound
 			}
-			return err
+			return fmt.Errorf("failed to fetch workout exercise: %w", err)
 		}
 
-		// Validate new position
 		var totalExercises int64
 		if err := tx.Model(&model.WorkoutExercise{}).
 			Where("workout_id = ?", workoutExercise.WorkoutID).
@@ -192,7 +152,7 @@ func (r *workoutExerciseRepository) Reorder(ctx context.Context, workoutExercise
 		}
 
 		if newPosition < 1 || newPosition > int(totalExercises) {
-			return fmt.Errorf("%w: position must be between 1 and %d", ErrInvalidPosition, totalExercises)
+			return customerrors.NewErrInvalidPosition(newPosition, totalExercises)
 		}
 
 		// No change needed
