@@ -45,7 +45,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Serve OpenAPI YAML file
 	router.HandleFunc("/swagger-ui/doc.yaml", func(w http.ResponseWriter, r *http.Request) {
-		filePath := "../../api-contracts/openapi/v1/spec.yaml"
+		filePath := "../../internal/api/api/openapi.yaml"
 		log.Println("Serving OpenAPI YAML from:", filePath) // Debugging the file path
 		http.ServeFile(w, r, filePath)
 	}).Methods("GET")
@@ -63,9 +63,3 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	return handler
 }
-
-// fsys, _ := fs.Sub(swaggerContent, "../../swagger-ui")
-// 	router.StaticFS("/swagger", http.FS(fsys))
-// 	r.
-// 	r.HandleFunc("/users/me", s.UserHandler.GetUser).Methods("GET")
-// 	r.HandleFunc("/users/me", s.UserHandler.UpdateUser).Methods("PUT")

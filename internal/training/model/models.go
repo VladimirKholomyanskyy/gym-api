@@ -4,9 +4,7 @@ import (
 	"time"
 
 	"github.com/VladimirKholomyanskyy/gym-api/internal/common"
-	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"gorm.io/gorm"
 )
 
 type TrainingProgram struct {
@@ -44,10 +42,10 @@ type Exercise struct {
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.
-func (b *Exercise) BeforeCreate(tx *gorm.DB) (err error) {
-	b.ID = uuid.New().String()
-	return
-}
+// func (b *Exercise) BeforeCreate(tx *gorm.DB) (err error) {
+// 	b.ID = uuid.New().String()
+// 	return
+// }
 
 type ScheduledWorkout struct {
 	common.Base

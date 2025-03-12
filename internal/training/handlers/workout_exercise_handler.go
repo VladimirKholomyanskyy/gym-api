@@ -24,7 +24,7 @@ func (h *workoutExerciseHandler) ListWorkoutExercises(ctx context.Context, worko
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(workoutId) {
+	if !common.IsUUIDValid(workoutId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
 	if !common.IsPageValid(page) {
@@ -60,10 +60,10 @@ func (h *workoutExerciseHandler) AddWorkoutExercise(ctx context.Context, request
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(request.WorkoutId) {
+	if !common.IsUUIDValid(request.WorkoutId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
-	if common.IsUUIDValid(request.ExerciseId) {
+	if !common.IsUUIDValid(request.ExerciseId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Exercise ID is not a valid UUID")
 	}
 	if request.Sets < 1 {
@@ -85,7 +85,7 @@ func (h *workoutExerciseHandler) UpdateWorkoutExercise(ctx context.Context, work
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(workoutExerciseId) {
+	if !common.IsUUIDValid(workoutExerciseId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout exercise ID is not a valid UUID")
 	}
 	workoutExercise, err := h.useCase.Update(ctx, profileId, workoutExerciseId, workoutExerciseRequest)
@@ -100,7 +100,7 @@ func (h *workoutExerciseHandler) DeleteWorkoutExercise(ctx context.Context, work
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(workoutExerciseId) {
+	if !common.IsUUIDValid(workoutExerciseId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout exercise ID is not a valid UUID")
 	}
 	err = h.useCase.Delete(ctx, profileId, workoutExerciseId)

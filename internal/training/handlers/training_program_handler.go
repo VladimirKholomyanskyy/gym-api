@@ -52,7 +52,7 @@ func (h *TrainingProgramHandler) CreateTrainingProgram(ctx context.Context, requ
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if utils.HasText(&request.Name) {
+	if !utils.HasText(&request.Name) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_REQUEST, "Training program name cannot be empty")
 	}
 	program, err := h.useCase.Create(ctx, profileID, request)
@@ -67,7 +67,7 @@ func (h *TrainingProgramHandler) GetTrainingProgramById(ctx context.Context, pro
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programID) {
+	if !common.IsUUIDValid(programID) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
 	userProgram, err := h.useCase.GetByID(ctx, profileID, programID)
@@ -88,7 +88,7 @@ func (h *TrainingProgramHandler) DeleteTrainingProgram(ctx context.Context, prog
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programID) {
+	if !common.IsUUIDValid(programID) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
 	err = h.useCase.Delete(ctx, profileID, programID)
@@ -110,7 +110,7 @@ func (h *TrainingProgramHandler) UpdateTrainingProgram(ctx context.Context, prog
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programID) {
+	if !common.IsUUIDValid(programID) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
 	userProgram, err := h.useCase.Update(ctx, profileID, programID, request)

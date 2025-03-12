@@ -25,7 +25,7 @@ func (h *scheduledWorkoutsHandler) ScheduleWorkout(ctx context.Context, request 
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(request.WorkoutId) {
+	if !common.IsUUIDValid(request.WorkoutId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
 	input := model.CreateScheduledWorkoutInput{ProfileID: profileId, WorkoutID: request.WorkoutId}

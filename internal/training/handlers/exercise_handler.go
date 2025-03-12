@@ -48,7 +48,7 @@ func (h *exerciseHandler) ListExercises(ctx context.Context, page, pageSize int3
 
 // GetExerciseById returns an exercise by its ID
 func (h *exerciseHandler) GetExerciseById(ctx context.Context, exerciseId string) (openapi.ImplResponse, error) {
-	if common.IsUUIDValid(exerciseId) {
+	if !common.IsUUIDValid(exerciseId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "exercise ID is not a valid UUID")
 	}
 

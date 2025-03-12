@@ -24,7 +24,7 @@ func (h *WorkoutHandler) ListWorkoutsForProgram(ctx context.Context, programId s
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programId) {
+	if !common.IsUUIDValid(programId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
 	if !common.IsPageValid(page) {
@@ -60,10 +60,10 @@ func (h *WorkoutHandler) AddWorkoutToProgram(ctx context.Context, programId stri
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programId) {
+	if !common.IsUUIDValid(programId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
-	if utils.HasText(&request.Name) {
+	if !utils.HasText(&request.Name) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_REQUEST, "Workout name cannot be empty")
 	}
 	workout, err := h.useCase.Create(ctx, profileId, programId, request)
@@ -84,10 +84,10 @@ func (h *WorkoutHandler) GetWorkoutForProgram(ctx context.Context, programId str
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programId) {
+	if !common.IsUUIDValid(programId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
-	if common.IsUUIDValid(workoutId) {
+	if !common.IsUUIDValid(workoutId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
 	workout, err := h.useCase.GetByProgramIDAndWorkoutID(ctx, profileId, programId, workoutId)
@@ -108,10 +108,10 @@ func (h *WorkoutHandler) UpdateWorkout(ctx context.Context, programId string, wo
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programId) {
+	if !common.IsUUIDValid(programId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
-	if common.IsUUIDValid(workoutId) {
+	if !common.IsUUIDValid(workoutId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
 	workout, err := h.useCase.Update(ctx, profileId, programId, workoutId, request)
@@ -132,10 +132,10 @@ func (h *WorkoutHandler) DeleteWorkout(ctx context.Context, programId string, wo
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programId) {
+	if !common.IsUUIDValid(programId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
-	if common.IsUUIDValid(workoutId) {
+	if !common.IsUUIDValid(workoutId) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
 	err = h.useCase.Delete(ctx, profileId, programId, workoutId)
@@ -157,10 +157,10 @@ func (h *WorkoutHandler) ReorderWorkout(ctx context.Context, programID string, w
 	if err != nil {
 		return utils.ErrorResponse(http.StatusUnauthorized, openapi.FORBIDDEN, err.Error())
 	}
-	if common.IsUUIDValid(programID) {
+	if !common.IsUUIDValid(programID) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Program ID is not a valid UUID")
 	}
-	if common.IsUUIDValid(workoutID) {
+	if !common.IsUUIDValid(workoutID) {
 		return utils.ErrorResponse(http.StatusBadRequest, openapi.INVALID_ID, "Workout ID is not a valid UUID")
 	}
 	err = h.useCase.Reorder(ctx, profileId, programID, workoutID, request)

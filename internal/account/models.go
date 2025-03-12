@@ -21,7 +21,7 @@ type Profile struct {
 }
 
 type Setting struct {
-	ID                   string `gorm:"primaryKey"`
+	ID                   string `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
 	ProfileID            string
 	Language             string
 	MeasurementUnits     openapi.MeasurementUnits
