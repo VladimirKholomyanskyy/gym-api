@@ -11,6 +11,8 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	// Initialize controllers
+	AuthAPIController := openapi.NewAuthAPIController(s.AuthHandler)
+
 	ProfileAPIController := openapi.NewProfileAPIController(s.ProfilesHandler)
 	SettingsAPIController := openapi.NewSettingsAPIController(s.SettingsHandler)
 
@@ -25,7 +27,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Create a new router
 	router := mux.NewRouter()
-	r := openapi.NewRouter(
+	// Create a subrouter for public endpoints (no authentication required)
+	publicRouter := router.PathPrefix("/api/v1").Subrouter()
+
+	// Register the auth config endpoint
+	publicRouter.HandleFunc("/auth/config", AuthAPIController.GetAuthConfig).Methods("GET")
+
+	// Create a subrouter for authenticated endpoints
+	// All other API endpoints
+	authenticatedRouter := openapi.NewRouter(
 		ProfileAPIController,
 		SettingsAPIController,
 		TrainingProgramsAPIController,
@@ -36,8 +46,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 		WorkoutSessionsAPIController,
 		ExerciseLogsApiController,
 	)
-	r.Use(s.KeycloakMiddleware.Authenticate)
-	router.PathPrefix("/api").Handler(r)
+
+	// Apply the authentication middleware only to the authenticated router
+	authenticatedRouter.Use(s.AuthMiddleware.Authenticate)
+
+	// Mount the authenticated router to the main router
+	router.PathPrefix("/api").Handler(authenticatedRouter)
 
 	// Serve Swagger UI
 	swaggerDir := "../../swagger-ui" // Path to Swagger UI files

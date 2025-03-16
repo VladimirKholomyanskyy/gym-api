@@ -27,7 +27,7 @@ import (
 
 type Server struct {
 	port                     int
-	KeycloakMiddleware       *auth.KeycloakMiddleware
+	AuthMiddleware           *auth.CognitoMiddleware
 	ProfilesHandler          openapi.ProfileAPIServicer
 	SettingsHandler          openapi.SettingsAPIServicer
 	TrainingProgramsHandler  openapi.TrainingProgramsAPIServicer
@@ -37,6 +37,7 @@ type Server struct {
 	ScheduledWorkoutsHandler openapi.ScheduledWorkoutsAPIServicer
 	WorkoutSessionsHandler   openapi.WorkoutSessionsAPIServicer
 	ExerciseLogsHandler      openapi.ExerciseLogsAPIServicer
+	AuthHandler              openapi.AuthAPIServicer
 }
 
 func NewServer() *http.Server {
@@ -47,18 +48,23 @@ func NewServer() *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	fmt.Println(port)
 	var (
-		database = os.Getenv("BLUEPRINT_DB_DATABASE")
-		password = os.Getenv("BLUEPRINT_DB_PASSWORD")
-		username = os.Getenv("BLUEPRINT_DB_USERNAME")
-		db_port  = os.Getenv("BLUEPRINT_DB_PORT")
-		host     = os.Getenv("BLUEPRINT_DB_HOST")
-		schema   = os.Getenv("BLUEPRINT_DB_SCHEMA")
+		database   = os.Getenv("BLUEPRINT_DB_DATABASE")
+		password   = os.Getenv("BLUEPRINT_DB_PASSWORD")
+		username   = os.Getenv("BLUEPRINT_DB_USERNAME")
+		db_port    = os.Getenv("BLUEPRINT_DB_PORT")
+		host       = os.Getenv("BLUEPRINT_DB_HOST")
+		schema     = os.Getenv("BLUEPRINT_DB_SCHEMA")
+		userPoolID = os.Getenv("AWS_COGNITO_USER_POOL_ID")
+		region     = os.Getenv("AWS_COGNITO_REGION")
+		clientID   = os.Getenv("AWS_COGNITO_CLIENT_ID")
 	)
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s", username, password, host, db_port, database, schema)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
+
+	authHandler := auth.NewAuthHandler()
 
 	// Initializing data layer
 	profilesRepo := account.NewProfileRepository(db)
@@ -94,17 +100,15 @@ func NewServer() *http.Server {
 	dataSeed := seed.NewDatabaseSeed(exerciseRepo, workoutRepo, trainingProgramRepo, workoutExerciseRepo, profilesRepo, settingsRepo)
 	dataSeed.Seed()
 
-	client_id := os.Getenv("CLIENT_ID")
-	issuer := os.Getenv("ISSUER")
-
-	KeycloakMiddleware, err := auth.NewKeycloakMiddleware(profilesRepo, issuer, client_id)
+	// Create Cognito middleware
+	cognitoMiddleware, err := auth.NewCognitoMiddleware(profilesRepo, userPoolID, region, clientID)
 	if err != nil {
-		log.Fatal("Failed to init keycloak")
+		log.Fatal("Failed to initialize Cognito middleware:", err)
 	}
 
 	NewServer := &Server{
 		port:                     port,
-		KeycloakMiddleware:       KeycloakMiddleware,
+		AuthMiddleware:           cognitoMiddleware,
 		ProfilesHandler:          profilesHandler,
 		SettingsHandler:          settingsHandler,
 		TrainingProgramsHandler:  trainingProgramsHandler,
@@ -114,6 +118,7 @@ func NewServer() *http.Server {
 		ScheduledWorkoutsHandler: scheduledWorkoutsHandler,
 		WorkoutSessionsHandler:   workoutSessionsHandler,
 		ExerciseLogsHandler:      exerciseLogsHandler,
+		AuthHandler:              authHandler,
 	}
 
 	// Declare Server config

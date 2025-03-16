@@ -41,12 +41,6 @@ type Exercise struct {
 	Description     string
 }
 
-// BeforeCreate will set a UUID rather than numeric ID.
-// func (b *Exercise) BeforeCreate(tx *gorm.DB) (err error) {
-// 	b.ID = uuid.New().String()
-// 	return
-// }
-
 type ScheduledWorkout struct {
 	common.Base
 	ProfileID string
